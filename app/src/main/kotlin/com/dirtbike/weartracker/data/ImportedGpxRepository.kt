@@ -20,12 +20,12 @@ object ImportedGpxRepository {
     }
 
     fun listImportedWaypoints(context: Context): List<Waypoint> {
-        val dir = importDir(context)
-        if (!dir.exists()) return emptyList()
+        val importFiles = listGpxFiles(importDir(context))
+        val savedRideFiles = listGpxFiles(RideRepository.getGpxDir(context))
 
-        return dir.listFiles { file -> file.isFile && file.extension.equals("gpx", ignoreCase = true) }
-            .orEmpty()
-            .sortedBy { it.name.lowercase() }
+        return (importFiles + savedRideFiles)
+            .distinctBy { it.absolutePath }
+            .sortedWith(compareBy<File> { it.parentFile?.name != IMPORT_DIR }.thenBy { it.name.lowercase() })
             .flatMap { file ->
                 runCatching { RideGpxParser.readRide(file).waypoints }.getOrDefault(emptyList())
             }
@@ -33,6 +33,15 @@ object ImportedGpxRepository {
 
     private fun importDir(context: Context): File {
         return File(context.filesDir, IMPORT_DIR)
+    }
+
+    private fun listGpxFiles(dir: File): List<File> {
+        if (!dir.exists()) return emptyList()
+        return dir.listFiles { file ->
+            file.isFile &&
+                file.extension.equals("gpx", ignoreCase = true) &&
+                file.name != "draft.gpx"
+        }.orEmpty().toList()
     }
 
     private fun sanitizeGpxFileName(rawName: String): String {

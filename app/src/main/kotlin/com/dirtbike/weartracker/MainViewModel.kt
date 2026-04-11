@@ -156,6 +156,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun setTrackingPage(page: TrackingPage) {
         if (_trackingPage.value == page) return
         _trackingPage.value = page
+        if (page == TrackingPage.WAYPOINT) {
+            refreshImportedWaypoints()
+        }
         if (isTracking.value) {
             settings.edit()
                 .putString(PREF_ACTIVE_TRACKING_PAGE, page.name)
