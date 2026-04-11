@@ -11,6 +11,7 @@ import com.dirtbike.weartracker.data.RideMapDetails
 import com.dirtbike.weartracker.data.RideSummary
 import com.dirtbike.weartracker.data.TrackingQualityMode
 import com.dirtbike.weartracker.data.Waypoint
+import com.dirtbike.weartracker.data.visibilityKey
 import com.dirtbike.weartracker.gpx.GpxWriter
 import com.dirtbike.weartracker.gpx.RideGpxParser
 import com.dirtbike.weartracker.service.TrackingService
@@ -92,6 +93,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _hiddenWaypointCount = MutableStateFlow(0)
     val hiddenWaypointCount: StateFlow<Int> = _hiddenWaypointCount.asStateFlow()
+
+    private val _hiddenWaypointKeys = MutableStateFlow(hiddenWaypointKeys())
+    val hiddenWaypointKeys: StateFlow<Set<String>> = _hiddenWaypointKeys.asStateFlow()
 
     private val _activeWaypoint = MutableStateFlow<Waypoint?>(null)
     val activeWaypoint: StateFlow<Waypoint?> = _activeWaypoint.asStateFlow()
@@ -175,26 +179,32 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _activeWaypoint.value = waypoint
         settings.edit()
             .putInt(PREF_ACTIVE_WAYPOINT_INDEX, index)
+            .putString(PREF_ACTIVE_WAYPOINT_KEY, waypoint.visibilityKey())
             .apply()
     }
 
-    fun hideImportedWaypoint(index: Int) {
-        val waypoint = _importedWaypoints.value.getOrNull(index) ?: return
+    fun hideWaypoint(waypoint: Waypoint) {
         val hiddenKeys = hiddenWaypointKeys().toMutableSet()
-        hiddenKeys += waypoint.hideKey()
+        hiddenKeys += waypoint.visibilityKey()
         saveHiddenWaypointKeys(hiddenKeys)
 
-        if (_activeWaypoint.value?.hideKey() == waypoint.hideKey()) {
-            _activeWaypointIndex.value = NO_ACTIVE_WAYPOINT
-            _activeWaypoint.value = null
-            settings.edit().remove(PREF_ACTIVE_WAYPOINT_INDEX).apply()
-        }
+        clearActiveWaypointIfHidden(hiddenKeys)
 
         refreshImportedWaypoints()
     }
 
-    fun unhideAllWaypoints() {
-        settings.edit().remove(PREF_HIDDEN_WAYPOINT_KEYS).apply()
+    fun showWaypoint(waypoint: Waypoint) {
+        val hiddenKeys = hiddenWaypointKeys().toMutableSet()
+        hiddenKeys -= waypoint.visibilityKey()
+        saveHiddenWaypointKeys(hiddenKeys)
+        refreshImportedWaypoints()
+    }
+
+    fun showAllWaypoints(waypoints: List<Waypoint>) {
+        val keysToShow = waypoints.map { it.visibilityKey() }.toSet()
+        val hiddenKeys = hiddenWaypointKeys().toMutableSet()
+        hiddenKeys.removeAll(keysToShow)
+        saveHiddenWaypointKeys(hiddenKeys)
         refreshImportedWaypoints()
     }
 
@@ -427,6 +437,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val hiddenKeys = hiddenWaypointKeys()
             val allWaypoints = ImportedGpxRepository.listImportedWaypoints(ctx)
             val visibleWaypoints = allWaypoints.filterNot { it.hideKey() in hiddenKeys }
+            _hiddenWaypointKeys.value = hiddenKeys
             _hiddenWaypointCount.value = allWaypoints.size - visibleWaypoints.size
             _importedWaypoints.value = visibleWaypoints
             restoreActiveWaypoint(visibleWaypoints)
@@ -486,12 +497,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun restoreActiveWaypoint(imported: List<Waypoint>) {
+        val savedKey = settings.getString(PREF_ACTIVE_WAYPOINT_KEY, null)
         val savedIndex = settings.getInt(PREF_ACTIVE_WAYPOINT_INDEX, NO_ACTIVE_WAYPOINT)
         val index = when {
+            savedKey != null -> imported.indexOfFirst { it.visibilityKey() == savedKey }
             savedIndex in imported.indices -> savedIndex
             _activeWaypointIndex.value in imported.indices -> _activeWaypointIndex.value
             else -> NO_ACTIVE_WAYPOINT
-        }
+        }.takeIf { it in imported.indices } ?: NO_ACTIVE_WAYPOINT
         _activeWaypointIndex.value = index
         _activeWaypoint.value = imported.getOrNull(index)
     }
@@ -503,6 +516,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         settings.edit()
             .putString(PREF_ACTIVE_TRACKING_PAGE, TrackingPage.MAP.name)
             .remove(PREF_ACTIVE_WAYPOINT_INDEX)
+            .remove(PREF_ACTIVE_WAYPOINT_KEY)
             .apply()
     }
 
@@ -514,14 +528,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         settings.edit()
             .putStringSet(PREF_HIDDEN_WAYPOINT_KEYS, keys)
             .apply()
+        _hiddenWaypointKeys.value = keys
     }
 
     private fun Waypoint.hideKey(): String {
-        return listOf(
-            name.trim().lowercase(Locale.US),
-            "%.6f".format(Locale.US, latitude),
-            "%.6f".format(Locale.US, longitude)
-        ).joinToString("|")
+        return visibilityKey()
+    }
+
+    private fun clearActiveWaypointIfHidden(hiddenKeys: Set<String>) {
+        val activeWaypoint = _activeWaypoint.value ?: return
+        if (activeWaypoint.visibilityKey() !in hiddenKeys) return
+        _activeWaypointIndex.value = NO_ACTIVE_WAYPOINT
+        _activeWaypoint.value = null
+        settings.edit()
+            .remove(PREF_ACTIVE_WAYPOINT_INDEX)
+            .remove(PREF_ACTIVE_WAYPOINT_KEY)
+            .apply()
     }
 
     private fun defaultRideName(): String {
@@ -533,6 +555,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         private const val PREF_TRACKING_MODE = "tracking_mode"
         private const val PREF_ACTIVE_TRACKING_PAGE = "active_tracking_page"
         private const val PREF_ACTIVE_WAYPOINT_INDEX = "active_waypoint_index"
+        private const val PREF_ACTIVE_WAYPOINT_KEY = "active_waypoint_key"
         private const val PREF_HIDDEN_WAYPOINT_KEYS = "hidden_waypoint_keys"
         private const val NO_ACTIVE_WAYPOINT = -1
     }

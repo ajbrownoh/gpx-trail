@@ -122,7 +122,7 @@ class MainActivity : ComponentActivity() {
                 val isMapZoomedIn by viewModel.isMapZoomedIn.collectAsState()
                 val trackingPage by viewModel.trackingPage.collectAsState()
                 val importedWaypoints by viewModel.importedWaypoints.collectAsState()
-                val hiddenWaypointCount by viewModel.hiddenWaypointCount.collectAsState()
+                val hiddenWaypointKeys by viewModel.hiddenWaypointKeys.collectAsState()
                 val activeWaypoint by viewModel.activeWaypoint.collectAsState()
                 val activeWaypointIndex by viewModel.activeWaypointIndex.collectAsState()
                 val savedRides by viewModel.savedRides.collectAsState()
@@ -219,7 +219,6 @@ class MainActivity : ComponentActivity() {
                         trackPoints = trackPoints,
                         waypoints = waypoints,
                         importedWaypoints = importedWaypoints,
-                        hiddenWaypointCount = hiddenWaypointCount,
                         activeWaypoint = activeWaypoint,
                         activeWaypointIndex = activeWaypointIndex,
                         trackingPage = trackingPage,
@@ -228,8 +227,6 @@ class MainActivity : ComponentActivity() {
                         onZoomOut = { viewModel.zoomMapOut() },
                         onTrackingPageChange = { page -> viewModel.setTrackingPage(page) },
                         onSelectWaypoint = { index -> viewModel.selectImportedWaypoint(index) },
-                        onHideWaypoint = { index -> viewModel.hideImportedWaypoint(index) },
-                        onUnhideAllWaypoints = { viewModel.unhideAllWaypoints() },
                         onPauseResume = { viewModel.onPauseResumeTapped() },
                         onStop = { viewModel.onStopTapped() },
                         onMark = { viewModel.onMarkSpotTapped() }
@@ -277,6 +274,10 @@ class MainActivity : ComponentActivity() {
                     Screen.SAVED_RIDE_MAP -> selectedRideMap?.let { rideMap ->
                         SavedRideMapScreen(
                             rideMap = rideMap,
+                            hiddenWaypointKeys = hiddenWaypointKeys,
+                            onHideWaypoint = { waypoint -> viewModel.hideWaypoint(waypoint) },
+                            onShowWaypoint = { waypoint -> viewModel.showWaypoint(waypoint) },
+                            onShowAllWaypoints = { viewModel.showAllWaypoints(rideMap.waypoints) },
                             onBack = { viewModel.closeSavedRideMap() }
                         )
                     }

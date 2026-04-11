@@ -82,7 +82,6 @@ fun TrackingScreen(
     trackPoints: List<TrackPoint>,
     waypoints: List<Waypoint>,
     importedWaypoints: List<Waypoint>,
-    hiddenWaypointCount: Int,
     activeWaypoint: Waypoint?,
     activeWaypointIndex: Int,
     trackingPage: TrackingPage,
@@ -91,8 +90,6 @@ fun TrackingScreen(
     onZoomOut: () -> Unit,
     onTrackingPageChange: (TrackingPage) -> Unit,
     onSelectWaypoint: (Int) -> Unit,
-    onHideWaypoint: (Int) -> Unit,
-    onUnhideAllWaypoints: () -> Unit,
     onPauseResume: () -> Unit,
     onStop: () -> Unit,
     onMark: () -> Unit
@@ -157,14 +154,11 @@ fun TrackingScreen(
         if (trackingPage == TrackingPage.WAYPOINT) {
             WaypointNavigationScreen(
                 importedWaypoints = importedWaypoints,
-                hiddenWaypointCount = hiddenWaypointCount,
                 activeWaypoint = activeWaypoint,
                 activeWaypointIndex = activeWaypointIndex,
                 currentPoint = currentPoint,
                 heading = displayHeading,
                 onSelectWaypoint = onSelectWaypoint,
-                onHideWaypoint = onHideWaypoint,
-                onUnhideAllWaypoints = onUnhideAllWaypoints,
                 modifier = Modifier.fillMaxSize()
             )
             return@Box
@@ -351,14 +345,11 @@ private fun StatusChip(
 @Composable
 private fun WaypointNavigationScreen(
     importedWaypoints: List<Waypoint>,
-    hiddenWaypointCount: Int,
     activeWaypoint: Waypoint?,
     activeWaypointIndex: Int,
     currentPoint: TrackPoint?,
     heading: Float,
     onSelectWaypoint: (Int) -> Unit,
-    onHideWaypoint: (Int) -> Unit,
-    onUnhideAllWaypoints: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showWaypointList by remember {
@@ -474,33 +465,14 @@ private fun WaypointNavigationScreen(
                         onClick = {
                             onSelectWaypoint(index)
                             showWaypointList = false
-                        },
-                        onLongClick = { onHideWaypoint(index) }
+                        }
                     )
                 }
             }
         }
 
-        if (hiddenWaypointCount > 0) {
-            Button(
-                onClick = onUnhideAllWaypoints,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(26.dp),
-                colors = ButtonDefaults.buttonColors(backgroundColor = OrangeDim)
-            ) {
-                Text(
-                    text = "Show $hiddenWaypointCount hidden",
-                    color = TextWhite,
-                    fontSize = 8.sp,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-
         Text(
-            text = "Tap select | hold hide | swipe right map",
+            text = "Tap select | swipe right map",
             color = TextGray,
             fontSize = 8.sp,
             textAlign = TextAlign.Center
@@ -540,7 +512,7 @@ private fun WaypointArrowOnlyScreen(
         ) {
             Canvas(
                 modifier = Modifier
-                    .size(108.dp)
+                    .size(130.dp)
                     .graphicsLayer { rotationZ = relativeBearing }
             ) {
                 drawWaypointArrow(
@@ -588,8 +560,7 @@ private fun WaypointArrowOnlyScreen(
 private fun WaypointSelectRow(
     waypoint: Waypoint,
     selected: Boolean,
-    onClick: () -> Unit,
-    onLongClick: () -> Unit
+    onClick: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -601,8 +572,7 @@ private fun WaypointSelectRow(
             )
             .pointerInput(waypoint, selected) {
                 detectTapGestures(
-                    onTap = { onClick() },
-                    onLongPress = { onLongClick() }
+                    onTap = { onClick() }
                 )
             }
             .padding(horizontal = 10.dp),
@@ -818,13 +788,12 @@ private fun DrawScope.drawWaypointArrow(color: Color) {
         lineTo(cx + halfW, cy + len * 0.24f)
         close()
     }
-    drawPath(arrowPath, color = color.copy(alpha = 0.22f))
+    drawPath(arrowPath, color = color.copy(alpha = 0.28f))
     drawPath(
         arrowPath,
         color = color,
-        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 4f, cap = StrokeCap.Round)
+        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 5.2f, cap = StrokeCap.Round)
     )
-    drawCircle(color = color, radius = len * 0.10f, center = Offset(cx, cy - len * 0.02f))
 }
 
 private fun DrawScope.drawStartPointer(cx: Float, cy: Float, radius: Float) {
