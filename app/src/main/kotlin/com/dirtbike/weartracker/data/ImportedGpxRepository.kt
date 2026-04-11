@@ -29,6 +29,7 @@ object ImportedGpxRepository {
             .flatMap { file ->
                 runCatching { RideGpxParser.readRide(file).waypoints }.getOrDefault(emptyList())
             }
+            .sortedBy { it.name.lowercase() }
     }
 
     private fun importDir(context: Context): File {
