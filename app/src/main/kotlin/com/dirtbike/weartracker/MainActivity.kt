@@ -122,6 +122,7 @@ class MainActivity : ComponentActivity() {
                 val isMapZoomedIn by viewModel.isMapZoomedIn.collectAsState()
                 val trackingPage by viewModel.trackingPage.collectAsState()
                 val importedWaypoints by viewModel.importedWaypoints.collectAsState()
+                val hiddenWaypointCount by viewModel.hiddenWaypointCount.collectAsState()
                 val activeWaypoint by viewModel.activeWaypoint.collectAsState()
                 val activeWaypointIndex by viewModel.activeWaypointIndex.collectAsState()
                 val savedRides by viewModel.savedRides.collectAsState()
@@ -218,6 +219,7 @@ class MainActivity : ComponentActivity() {
                         trackPoints = trackPoints,
                         waypoints = waypoints,
                         importedWaypoints = importedWaypoints,
+                        hiddenWaypointCount = hiddenWaypointCount,
                         activeWaypoint = activeWaypoint,
                         activeWaypointIndex = activeWaypointIndex,
                         trackingPage = trackingPage,
@@ -226,6 +228,8 @@ class MainActivity : ComponentActivity() {
                         onZoomOut = { viewModel.zoomMapOut() },
                         onTrackingPageChange = { page -> viewModel.setTrackingPage(page) },
                         onSelectWaypoint = { index -> viewModel.selectImportedWaypoint(index) },
+                        onHideWaypoint = { index -> viewModel.hideImportedWaypoint(index) },
+                        onUnhideAllWaypoints = { viewModel.unhideAllWaypoints() },
                         onPauseResume = { viewModel.onPauseResumeTapped() },
                         onStop = { viewModel.onStopTapped() },
                         onMark = { viewModel.onMarkSpotTapped() }

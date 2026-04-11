@@ -81,6 +81,7 @@ fun TrackingScreen(
     trackPoints: List<TrackPoint>,
     waypoints: List<Waypoint>,
     importedWaypoints: List<Waypoint>,
+    hiddenWaypointCount: Int,
     activeWaypoint: Waypoint?,
     activeWaypointIndex: Int,
     trackingPage: TrackingPage,
@@ -89,6 +90,8 @@ fun TrackingScreen(
     onZoomOut: () -> Unit,
     onTrackingPageChange: (TrackingPage) -> Unit,
     onSelectWaypoint: (Int) -> Unit,
+    onHideWaypoint: (Int) -> Unit,
+    onUnhideAllWaypoints: () -> Unit,
     onPauseResume: () -> Unit,
     onStop: () -> Unit,
     onMark: () -> Unit
@@ -153,11 +156,14 @@ fun TrackingScreen(
         if (trackingPage == TrackingPage.WAYPOINT) {
             WaypointNavigationScreen(
                 importedWaypoints = importedWaypoints,
+                hiddenWaypointCount = hiddenWaypointCount,
                 activeWaypoint = activeWaypoint,
                 activeWaypointIndex = activeWaypointIndex,
                 currentPoint = currentPoint,
                 heading = displayHeading,
                 onSelectWaypoint = onSelectWaypoint,
+                onHideWaypoint = onHideWaypoint,
+                onUnhideAllWaypoints = onUnhideAllWaypoints,
                 modifier = Modifier.fillMaxSize()
             )
             return@Box
@@ -343,11 +349,14 @@ private fun StatusChip(
 @Composable
 private fun WaypointNavigationScreen(
     importedWaypoints: List<Waypoint>,
+    hiddenWaypointCount: Int,
     activeWaypoint: Waypoint?,
     activeWaypointIndex: Int,
     currentPoint: TrackPoint?,
     heading: Float,
     onSelectWaypoint: (Int) -> Unit,
+    onHideWaypoint: (Int) -> Unit,
+    onUnhideAllWaypoints: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val distanceText = if (currentPoint != null && activeWaypoint != null) {
@@ -447,14 +456,33 @@ private fun WaypointNavigationScreen(
                     WaypointSelectRow(
                         waypoint = waypoint,
                         selected = index == activeWaypointIndex,
-                        onClick = { onSelectWaypoint(index) }
+                        onClick = { onSelectWaypoint(index) },
+                        onLongClick = { onHideWaypoint(index) }
                     )
                 }
             }
         }
 
+        if (hiddenWaypointCount > 0) {
+            Button(
+                onClick = onUnhideAllWaypoints,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(26.dp),
+                colors = ButtonDefaults.buttonColors(backgroundColor = OrangeDim)
+            ) {
+                Text(
+                    text = "Show $hiddenWaypointCount hidden",
+                    color = TextWhite,
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+
         Text(
-            text = "Swipe right for map",
+            text = "Tap select | hold hide",
             color = TextGray,
             fontSize = 8.sp,
             textAlign = TextAlign.Center
@@ -466,16 +494,25 @@ private fun WaypointNavigationScreen(
 private fun WaypointSelectRow(
     waypoint: Waypoint,
     selected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLongClick: () -> Unit
 ) {
-    Button(
-        onClick = onClick,
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(30.dp),
-        colors = ButtonDefaults.buttonColors(
-            backgroundColor = if (selected) WaypointBlue else OrangeDim
-        )
+            .height(30.dp)
+            .background(
+                color = if (selected) WaypointBlue else OrangeDim,
+                shape = RoundedCornerShape(999.dp)
+            )
+            .pointerInput(waypoint, selected) {
+                detectTapGestures(
+                    onTap = { onClick() },
+                    onLongPress = { onLongClick() }
+                )
+            }
+            .padding(horizontal = 10.dp),
+        contentAlignment = Alignment.Center
     ) {
         Text(
             text = waypoint.name,
