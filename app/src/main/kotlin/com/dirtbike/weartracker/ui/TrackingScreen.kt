@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -359,6 +360,10 @@ private fun WaypointNavigationScreen(
     onUnhideAllWaypoints: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var showWaypointList by remember {
+        mutableStateOf(activeWaypoint == null)
+    }
+    var verticalSwipeDistance by remember { mutableStateOf(0f) }
     val distanceText = if (currentPoint != null && activeWaypoint != null) {
         formatWaypointDistance(
             distanceMeters(
@@ -384,14 +389,45 @@ private fun WaypointNavigationScreen(
         0f
     }
 
+    LaunchedEffect(activeWaypoint, importedWaypoints.size) {
+        if (activeWaypoint == null) {
+            showWaypointList = true
+        }
+    }
+
+    if (!showWaypointList) {
+        WaypointArrowOnlyScreen(
+            activeWaypoint = activeWaypoint,
+            currentPoint = currentPoint,
+            distanceText = distanceText,
+            relativeBearing = relativeBearing,
+            modifier = modifier
+                .background(BackgroundBlack)
+                .pointerInput(activeWaypointIndex) {
+                    detectVerticalDragGestures(
+                        onDragStart = { verticalSwipeDistance = 0f },
+                        onVerticalDrag = { _, dragAmount ->
+                            verticalSwipeDistance += dragAmount
+                        },
+                        onDragEnd = {
+                            if (kotlin.math.abs(verticalSwipeDistance) > 32f) {
+                                showWaypointList = true
+                            }
+                        }
+                    )
+                }
+        )
+        return
+    }
+
     Column(
         modifier = modifier
             .background(BackgroundBlack)
-            .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 10.dp),
+            .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "WAYPOINT NAV",
+            text = "WAYPOINTS",
             color = WaypointBlue,
             fontSize = 11.sp,
             fontWeight = FontWeight.ExtraBold,
@@ -401,37 +437,15 @@ private fun WaypointNavigationScreen(
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        Canvas(
-            modifier = Modifier
-                .size(62.dp)
-                .graphicsLayer { rotationZ = relativeBearing }
-        ) {
-            drawWaypointArrow(
-                color = if (activeWaypoint == null || currentPoint == null) {
-                    WaypointBlue.copy(alpha = 0.28f)
-                } else {
-                    WaypointBlue
-                }
-            )
-        }
-
         Text(
-            text = activeWaypoint?.name ?: "Select waypoint",
-            color = TextWhite,
-            fontSize = 12.sp,
+            text = if (activeWaypoint == null) "Select waypoint" else "Selected: ${activeWaypoint.name}",
+            color = if (activeWaypoint == null) TextGray else TextWhite,
+            fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.fillMaxWidth()
-        )
-
-        Text(
-            text = if (currentPoint == null) "Waiting for GPS" else distanceText,
-            color = WaypointBlue,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.ExtraBold,
-            textAlign = TextAlign.Center
         )
 
         ScalingLazyColumn(
@@ -456,7 +470,10 @@ private fun WaypointNavigationScreen(
                     WaypointSelectRow(
                         waypoint = waypoint,
                         selected = index == activeWaypointIndex,
-                        onClick = { onSelectWaypoint(index) },
+                        onClick = {
+                            onSelectWaypoint(index)
+                            showWaypointList = false
+                        },
                         onLongClick = { onHideWaypoint(index) }
                     )
                 }
@@ -482,10 +499,86 @@ private fun WaypointNavigationScreen(
         }
 
         Text(
-            text = "Tap select | hold hide",
+            text = "Tap select | hold hide | swipe right map",
             color = TextGray,
             fontSize = 8.sp,
             textAlign = TextAlign.Center
+        )
+    }
+}
+
+@Composable
+private fun WaypointArrowOnlyScreen(
+    activeWaypoint: Waypoint?,
+    currentPoint: TrackPoint?,
+    distanceText: String,
+    relativeBearing: Float,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+    ) {
+        Text(
+            text = "WAYPOINT NAV",
+            color = WaypointBlue,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.ExtraBold,
+            letterSpacing = 1.1.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+        )
+
+        Column(
+            modifier = Modifier.align(Alignment.Center),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(7.dp)
+        ) {
+            Canvas(
+                modifier = Modifier
+                    .size(108.dp)
+                    .graphicsLayer { rotationZ = relativeBearing }
+            ) {
+                drawWaypointArrow(
+                    color = if (activeWaypoint == null || currentPoint == null) {
+                        WaypointBlue.copy(alpha = 0.28f)
+                    } else {
+                        WaypointBlue
+                    }
+                )
+            }
+
+            Text(
+                text = activeWaypoint?.name ?: "Swipe for waypoints",
+                color = TextWhite,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Text(
+                text = if (currentPoint == null) "Waiting for GPS" else distanceText,
+                color = WaypointBlue,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.ExtraBold,
+                textAlign = TextAlign.Center
+            )
+        }
+
+        Text(
+            text = "Swipe up/down for list",
+            color = TextGray,
+            fontSize = 8.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
         )
     }
 }

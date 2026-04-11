@@ -4,6 +4,7 @@ import android.content.Context
 import com.dirtbike.weartracker.gpx.RideGpxParser
 import java.io.File
 import java.io.InputStream
+import java.util.Locale
 
 object ImportedGpxRepository {
     private const val IMPORT_DIR = "imported_gpx"
@@ -29,6 +30,7 @@ object ImportedGpxRepository {
             .flatMap { file ->
                 runCatching { RideGpxParser.readRide(file).waypoints }.getOrDefault(emptyList())
             }
+            .distinctBy { it.dedupeKey() }
             .sortedBy { it.name.lowercase() }
     }
 
@@ -52,5 +54,13 @@ object ImportedGpxRepository {
             .trim()
             .ifBlank { "imported_waypoints.gpx" }
         return if (cleaned.endsWith(".gpx", ignoreCase = true)) cleaned else "$cleaned.gpx"
+    }
+
+    private fun Waypoint.dedupeKey(): String {
+        return listOf(
+            name.trim().lowercase(Locale.US),
+            "%.5f".format(Locale.US, latitude),
+            "%.5f".format(Locale.US, longitude)
+        ).joinToString("|")
     }
 }
