@@ -1,0 +1,2 @@
+-keep class com.dirtbike.weartracker.** { *; }
+-keepclassmembers class * extends android.app.Service { *; }

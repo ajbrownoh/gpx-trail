@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GPX Trail</string>
+    <string name="start_ride">START</string>
+    <string name="stop_ride">STOP</string>
+    <string name="mark_spot">MARK</string>
+    <string name="save_ride">Save</string>
+    <string name="discard_ride">Discard</string>
+    <string name="saved_rides">Saved Rides</string>
+    <string name="share">Share</string>
+    <string name="name_this_spot">Name this spot</string>
+    <string name="tracking_notification_channel">Ride Tracking</string>
+    <string name="tracking_notification_title">Tracking your ride...</string>
+    <string name="tracking_notification_text">GPS active</string>
+</resources>
