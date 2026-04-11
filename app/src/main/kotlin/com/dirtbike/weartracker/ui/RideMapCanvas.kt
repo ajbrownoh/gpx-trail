@@ -89,10 +89,10 @@ fun RideMapCanvas(
 
             if (centerOnCurrent && activeWaypoint != null) {
                 drawLine(
-                    color = WaypointBlue.copy(alpha = 0.24f),
+                    color = WaypointBlue.copy(alpha = 0.55f),
                     start = projectedTrack.last(),
                     end = project(relativeOffset(activeWaypoint.latitude, activeWaypoint.longitude)),
-                    strokeWidth = 2.2f,
+                    strokeWidth = 3.2f,
                     cap = StrokeCap.Round,
                     pathEffect = WaypointGuideDash
                 )
