@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.rotate
 import com.dirtbike.weartracker.data.TrackPoint
@@ -13,6 +14,7 @@ import com.dirtbike.weartracker.ui.theme.BackgroundBlack
 import com.dirtbike.weartracker.ui.theme.GreenStart
 import com.dirtbike.weartracker.ui.theme.OrangeAccent
 import com.dirtbike.weartracker.ui.theme.TrackLine
+import com.dirtbike.weartracker.ui.theme.WaypointBlue
 import com.dirtbike.weartracker.ui.theme.WaypointYellow
 import kotlin.math.PI
 import kotlin.math.abs
@@ -22,6 +24,7 @@ import kotlin.math.min
 import kotlin.math.sin
 
 private val RouteStartColor = Color(0xFF4B525C)
+private val WaypointGuideDash = PathEffect.dashPathEffect(floatArrayOf(9f, 8f), 0f)
 
 @Composable
 fun RideMapCanvas(
@@ -31,6 +34,7 @@ fun RideMapCanvas(
     zoomFactor: Float,
     centerOnCurrent: Boolean,
     showEndPoint: Boolean,
+    activeWaypoint: Waypoint? = null,
     waypointColors: List<Color> = emptyList(),
     modifier: Modifier = Modifier
 ) {
@@ -82,6 +86,17 @@ fun RideMapCanvas(
 
         rotate(degrees = -heading, pivot = center) {
             val projectedTrack = relativeTrack.map(::project)
+
+            if (centerOnCurrent && activeWaypoint != null) {
+                drawLine(
+                    color = WaypointBlue.copy(alpha = 0.24f),
+                    start = projectedTrack.last(),
+                    end = project(relativeOffset(activeWaypoint.latitude, activeWaypoint.longitude)),
+                    strokeWidth = 2.2f,
+                    cap = StrokeCap.Round,
+                    pathEffect = WaypointGuideDash
+                )
+            }
 
             if (projectedTrack.size >= 2) {
                 for (segmentIndex in 1 until projectedTrack.size) {

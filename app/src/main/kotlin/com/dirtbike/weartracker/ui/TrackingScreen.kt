@@ -188,6 +188,7 @@ fun TrackingScreen(
                     zoomFactor = zoomFactor,
                     centerOnCurrent = true,
                     showEndPoint = false,
+                    activeWaypoint = activeWaypoint,
                     modifier = Modifier.fillMaxSize()
                 )
             }
