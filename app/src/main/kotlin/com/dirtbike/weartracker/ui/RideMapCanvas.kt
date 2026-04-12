@@ -1,7 +1,5 @@
 package com.dirtbike.weartracker.ui
 
-import android.graphics.Paint
-import android.graphics.Typeface
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -9,10 +7,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.toArgb
 import com.dirtbike.weartracker.data.TrackPoint
 import com.dirtbike.weartracker.data.Waypoint
 import com.dirtbike.weartracker.ui.theme.BackgroundBlack
@@ -27,7 +22,6 @@ import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sin
-import kotlin.math.sqrt
 
 private val RouteStartColor = Color(0xFF4B525C)
 private val WaypointGuideDash = PathEffect.dashPathEffect(floatArrayOf(9f, 8f), 0f)
@@ -91,18 +85,9 @@ fun RideMapCanvas(
         }
 
         val waypointGuide = if (centerOnCurrent && activeWaypoint != null) {
-            val currentPoint = trackPoints.last()
-            Triple(
+            Pair(
                 first = project(relativeTrack.last()),
-                second = project(relativeOffset(activeWaypoint.latitude, activeWaypoint.longitude)),
-                third = formatWaypointGuideDistance(
-                    haversineMeters(
-                        currentPoint.latitude,
-                        currentPoint.longitude,
-                        activeWaypoint.latitude,
-                        activeWaypoint.longitude
-                    )
-                )
+                second = project(relativeOffset(activeWaypoint.latitude, activeWaypoint.longitude))
             )
         } else {
             null
@@ -181,19 +166,6 @@ fun RideMapCanvas(
             }
         }
 
-        waypointGuide?.let { guide ->
-            val rotatedStart = rotateAround(guide.first, center, -heading)
-            val rotatedEnd = rotateAround(guide.second, center, -heading)
-            drawWaypointGuideDistanceLabel(
-                text = guide.third,
-                center = visibleGuideLabelPoint(
-                    start = rotatedStart,
-                    end = rotatedEnd,
-                    canvasWidth = size.width,
-                    canvasHeight = size.height
-                )
-            )
-        }
     }
 }
 
@@ -258,98 +230,6 @@ private fun distanceSquared(first: Offset, second: Offset): Float {
     val dx = first.x - second.x
     val dy = first.y - second.y
     return dx * dx + dy * dy
-}
-
-private fun visibleGuideLabelPoint(
-    start: Offset,
-    end: Offset,
-    canvasWidth: Float,
-    canvasHeight: Float
-): Offset {
-    val dx = end.x - start.x
-    val dy = end.y - start.y
-    val length = sqrt(dx * dx + dy * dy)
-    if (length < 1f) return start
-
-    val unitX = dx / length
-    val unitY = dy / length
-    val margin = min(canvasWidth, canvasHeight) * 0.12f
-    val distanceToVerticalEdge = when {
-        unitX > 0f -> (canvasWidth - margin - start.x) / unitX
-        unitX < 0f -> (margin - start.x) / unitX
-        else -> Float.POSITIVE_INFINITY
-    }
-    val distanceToHorizontalEdge = when {
-        unitY > 0f -> (canvasHeight - margin - start.y) / unitY
-        unitY < 0f -> (margin - start.y) / unitY
-        else -> Float.POSITIVE_INFINITY
-    }
-    val visibleDistance = listOf(length, distanceToVerticalEdge, distanceToHorizontalEdge)
-        .filter { it.isFinite() && it > 0f }
-        .minOrNull() ?: length
-    val preferredDistance = min(min(canvasWidth, canvasHeight) * 0.2f, visibleDistance * 0.58f)
-    val labelDistance = preferredDistance.coerceAtLeast(min(visibleDistance * 0.5f, 42f))
-
-    return Offset(
-        x = start.x + unitX * labelDistance,
-        y = start.y + unitY * labelDistance
-    )
-}
-
-private fun DrawScope.drawWaypointGuideDistanceLabel(text: String, center: Offset) {
-    val textSizePx = (size.minDimension * 0.06f).coerceIn(18f, 26f)
-    val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.White.toArgb()
-        textAlign = Paint.Align.CENTER
-        textSize = textSizePx
-        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-    }
-    val outlinePaint = Paint(textPaint).apply {
-        color = BackgroundBlack.copy(alpha = 0.82f).toArgb()
-        style = Paint.Style.STROKE
-        strokeWidth = 4f
-    }
-    val fontMetrics = textPaint.fontMetrics
-    val textHeight = fontMetrics.descent - fontMetrics.ascent
-    val halfWidth = textPaint.measureText(text) / 2f + 6f
-    val labelCenter = Offset(
-        x = center.x.coerceIn(halfWidth, size.width - halfWidth),
-        y = center.y.coerceIn(textHeight / 2f + 4f, size.height - textHeight / 2f - 4f)
-    )
-    val baseline = labelCenter.y - (fontMetrics.ascent + fontMetrics.descent) / 2f
-
-    drawContext.canvas.nativeCanvas.drawText(text, labelCenter.x, baseline, outlinePaint)
-    drawContext.canvas.nativeCanvas.drawText(text, labelCenter.x, baseline, textPaint)
-}
-
-private fun rotateAround(point: Offset, pivot: Offset, degrees: Float): Offset {
-    val radians = Math.toRadians(degrees.toDouble())
-    val translatedX = point.x - pivot.x
-    val translatedY = point.y - pivot.y
-    return Offset(
-        x = pivot.x + (translatedX * cos(radians) - translatedY * sin(radians)).toFloat(),
-        y = pivot.y + (translatedX * sin(radians) + translatedY * cos(radians)).toFloat()
-    )
-}
-
-private fun haversineMeters(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
-    val earthRadiusMeters = 6_371_000.0
-    val dLat = Math.toRadians(lat2 - lat1)
-    val dLon = Math.toRadians(lon2 - lon1)
-    val lat1R = Math.toRadians(lat1)
-    val lat2R = Math.toRadians(lat2)
-    val a = sin(dLat / 2).let { it * it } +
-        cos(lat1R) * cos(lat2R) * sin(dLon / 2).let { it * it }
-    return earthRadiusMeters * 2 * kotlin.math.atan2(kotlin.math.sqrt(a), kotlin.math.sqrt(1 - a))
-}
-
-private fun formatWaypointGuideDistance(meters: Double): String {
-    val miles = meters / 1609.344
-    return if (miles < 0.1) {
-        "%.2f mi".format(miles)
-    } else {
-        "%.1f mi".format(miles)
-    }
 }
 
 private fun normalizeDegrees(value: Float): Float {
