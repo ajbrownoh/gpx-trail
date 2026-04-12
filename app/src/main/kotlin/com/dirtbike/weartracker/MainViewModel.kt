@@ -93,6 +93,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _importedWaypoints = MutableStateFlow<List<Waypoint>>(emptyList())
     val importedWaypoints: StateFlow<List<Waypoint>> = _importedWaypoints.asStateFlow()
 
+    private val _allWaypoints = MutableStateFlow<List<Waypoint>>(emptyList())
+    val allWaypoints: StateFlow<List<Waypoint>> = _allWaypoints.asStateFlow()
+
     private val _hiddenWaypointCount = MutableStateFlow(0)
     val hiddenWaypointCount: StateFlow<Int> = _hiddenWaypointCount.asStateFlow()
 
@@ -449,6 +452,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val hiddenKeys = hiddenWaypointKeys()
             val allWaypoints = ImportedGpxRepository.listImportedWaypoints(ctx)
             val visibleWaypoints = allWaypoints.filterNot { it.hideKey() in hiddenKeys }
+            _allWaypoints.value = allWaypoints
             _hiddenWaypointKeys.value = hiddenKeys
             _hiddenWaypointCount.value = allWaypoints.size - visibleWaypoints.size
             _importedWaypoints.value = visibleWaypoints

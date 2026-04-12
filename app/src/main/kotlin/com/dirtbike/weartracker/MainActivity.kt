@@ -124,6 +124,7 @@ class MainActivity : ComponentActivity() {
                 val isMapZoomedIn by viewModel.isMapZoomedIn.collectAsState()
                 val trackingPage by viewModel.trackingPage.collectAsState()
                 val importedWaypoints by viewModel.importedWaypoints.collectAsState()
+                val allWaypoints by viewModel.allWaypoints.collectAsState()
                 val hiddenWaypointKeys by viewModel.hiddenWaypointKeys.collectAsState()
                 val activeWaypoint by viewModel.activeWaypoint.collectAsState()
                 val activeWaypointIndex by viewModel.activeWaypointIndex.collectAsState()
@@ -288,11 +289,11 @@ class MainActivity : ComponentActivity() {
                     }
 
                     Screen.WAYPOINTS -> WaypointManagerScreen(
-                        waypoints = importedWaypoints,
+                        waypoints = allWaypoints,
                         hiddenWaypointKeys = hiddenWaypointKeys,
                         onHideWaypoint = { waypoint -> viewModel.hideWaypoint(waypoint) },
                         onShowWaypoint = { waypoint -> viewModel.showWaypoint(waypoint) },
-                        onShowAllWaypoints = { viewModel.showAllWaypoints(importedWaypoints) },
+                        onShowAllWaypoints = { viewModel.showAllWaypoints(allWaypoints) },
                         onBack = { viewModel.closeWaypointManager() }
                     )
                 }
