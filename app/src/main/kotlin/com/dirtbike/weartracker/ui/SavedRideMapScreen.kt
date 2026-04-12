@@ -301,7 +301,11 @@ private fun WaypointLegendRow(
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                color = OrangeDim.copy(alpha = 0.16f),
+                color = if (isHidden) {
+                    TextGray.copy(alpha = 0.12f)
+                } else {
+                    OrangeDim.copy(alpha = 0.16f)
+                },
                 shape = RoundedCornerShape(12.dp)
             )
             .padding(horizontal = 10.dp, vertical = 7.dp),
@@ -315,7 +319,7 @@ private fun WaypointLegendRow(
             Spacer(modifier = Modifier.width(8.dp))
 
             Text(
-                text = if (isHidden) "${waypoint.name} (hidden)" else waypoint.name,
+                text = waypoint.name,
                 color = if (isHidden) TextGray else TextWhite,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium,
@@ -323,6 +327,11 @@ private fun WaypointLegendRow(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f)
             )
+
+            if (isHidden) {
+                Spacer(modifier = Modifier.width(6.dp))
+                HiddenWaypointBadge()
+            }
         }
 
         Row(
@@ -364,6 +373,23 @@ private fun WaypointLegendRow(
             }
         }
     }
+}
+
+@Composable
+private fun HiddenWaypointBadge() {
+    Text(
+        text = "HIDDEN",
+        color = BackgroundBlack,
+        fontSize = 7.sp,
+        fontWeight = FontWeight.ExtraBold,
+        maxLines = 1,
+        modifier = Modifier
+            .background(
+                color = TextGray,
+                shape = RoundedCornerShape(8.dp)
+            )
+            .padding(horizontal = 5.dp, vertical = 2.dp)
+    )
 }
 
 @Composable

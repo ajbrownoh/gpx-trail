@@ -238,7 +238,12 @@ private fun WaypointVisibilityRow(
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                color = OrangeDim.copy(alpha = if (selected) 0.34f else 0.16f),
+                color = when {
+                    isHidden && selected -> TextGray.copy(alpha = 0.24f)
+                    isHidden -> TextGray.copy(alpha = 0.12f)
+                    selected -> OrangeDim.copy(alpha = 0.34f)
+                    else -> OrangeDim.copy(alpha = 0.16f)
+                },
                 shape = RoundedCornerShape(12.dp)
             )
             .padding(horizontal = 10.dp, vertical = 7.dp),
@@ -262,13 +267,18 @@ private fun WaypointVisibilityRow(
                     text = when {
                         selected && isHidden -> "Selected | hidden"
                         selected -> "Selected | shown"
-                        isHidden -> "Hidden"
+                        isHidden -> "Hidden - not on map"
                         else -> "Shown"
                     },
                     color = TextGray,
                     fontSize = 8.sp,
                     maxLines = 1
                 )
+            }
+
+            if (isHidden) {
+                Spacer(modifier = Modifier.width(6.dp))
+                HiddenWaypointBadge()
             }
         }
 
@@ -311,6 +321,23 @@ private fun WaypointVisibilityRow(
             }
         }
     }
+}
+
+@Composable
+private fun HiddenWaypointBadge() {
+    Text(
+        text = "HIDDEN",
+        color = BackgroundBlack,
+        fontSize = 7.sp,
+        fontWeight = FontWeight.ExtraBold,
+        maxLines = 1,
+        modifier = Modifier
+            .background(
+                color = TextGray,
+                shape = RoundedCornerShape(8.dp)
+            )
+            .padding(horizontal = 5.dp, vertical = 2.dp)
+    )
 }
 
 @Composable
