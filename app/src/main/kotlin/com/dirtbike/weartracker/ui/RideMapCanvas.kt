@@ -140,11 +140,6 @@ fun RideMapCanvas(
                     radius = 5f,
                     center = endPoint
                 )
-                drawCircle(
-                    color = BackgroundBlack,
-                    radius = 2.5f,
-                    center = endPoint
-                )
             }
 
             visibleMarkerPoints.drop(markerIndex).forEachIndexed { index, waypointPoint ->
