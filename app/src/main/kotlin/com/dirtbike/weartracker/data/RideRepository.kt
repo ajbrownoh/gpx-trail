@@ -81,11 +81,11 @@ object RideRepository {
             .replace(Regex("\\s+"), "_")
             .trim('_', '.', ' ')
             .take(80)
-            .ifBlank { "ride" }
+            .ifBlank { "session" }
     }
 
     private fun String.removeDatePrefix(): String {
-        return replace(Regex("^\\d{8}_+"), "").ifBlank { "ride" }
+        return replace(Regex("^\\d{8}_+"), "").ifBlank { "session" }
     }
 
     private fun uniqueGpxFile(dir: File, baseName: String, currentFile: File): File {

@@ -140,6 +140,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         checkForDraft()
+        if (isTracking.value) {
+            restorePersistedActiveWaypointIfPresent()
+        }
         refreshImportedWaypoints()
     }
 
@@ -153,6 +156,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun resumeTrackingIfActive() {
         if (isTracking.value && _screen.value == Screen.HOME) {
+            restorePersistedActiveWaypointIfPresent()
             _trackingPage.value = TrackingPage.fromName(
                 settings.getString(PREF_ACTIVE_TRACKING_PAGE, null)
             )
@@ -189,7 +193,41 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         settings.edit()
             .putInt(PREF_ACTIVE_WAYPOINT_INDEX, index)
             .putString(PREF_ACTIVE_WAYPOINT_KEY, waypoint.visibilityKey())
+            .putString(PREF_ACTIVE_WAYPOINT_NAME, waypoint.name)
+            .putLong(PREF_ACTIVE_WAYPOINT_LAT_BITS, waypoint.latitude.toRawBits())
+            .putLong(PREF_ACTIVE_WAYPOINT_LON_BITS, waypoint.longitude.toRawBits())
+            .putLong(PREF_ACTIVE_WAYPOINT_ALT_BITS, waypoint.altitude.toRawBits())
+            .putLong(PREF_ACTIVE_WAYPOINT_TIME_MS, waypoint.timestampMs)
             .apply()
+    }
+
+    fun clearActiveWaypoint() {
+        _activeWaypointIndex.value = NO_ACTIVE_WAYPOINT
+        _activeWaypoint.value = null
+        settings.edit()
+            .remove(PREF_ACTIVE_WAYPOINT_INDEX)
+            .remove(PREF_ACTIVE_WAYPOINT_KEY)
+            .remove(PREF_ACTIVE_WAYPOINT_NAME)
+            .remove(PREF_ACTIVE_WAYPOINT_LAT_BITS)
+            .remove(PREF_ACTIVE_WAYPOINT_LON_BITS)
+            .remove(PREF_ACTIVE_WAYPOINT_ALT_BITS)
+            .remove(PREF_ACTIVE_WAYPOINT_TIME_MS)
+            .apply()
+    }
+
+    fun selectHomeWaypoint() {
+        val homePoint = trackPoints.value.firstOrNull() ?: latestGpsPoint.value ?: return
+        activateWaypointForTracking(
+            waypoint = Waypoint(
+                name = "Home",
+                latitude = homePoint.latitude,
+                longitude = homePoint.longitude,
+                altitude = homePoint.altitude,
+                timestampMs = homePoint.timestampMs
+            ),
+            includeInLists = false
+        )
+        _screen.value = Screen.TRACKING
     }
 
     fun hideWaypoint(waypoint: Waypoint) {
@@ -541,22 +579,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             else -> NO_ACTIVE_WAYPOINT
         }.takeIf { it in imported.indices } ?: NO_ACTIVE_WAYPOINT
         _activeWaypointIndex.value = index
-        _activeWaypoint.value = imported.getOrNull(index)
+        _activeWaypoint.value = imported.getOrNull(index) ?: persistedActiveWaypoint()
     }
 
-    private fun activateWaypointForTracking(waypoint: Waypoint) {
+    private fun activateWaypointForTracking(waypoint: Waypoint, includeInLists: Boolean = true) {
         val waypointKey = waypoint.visibilityKey()
         val hiddenKeys = hiddenWaypointKeys().toMutableSet()
         if (hiddenKeys.remove(waypointKey)) {
             saveHiddenWaypointKeys(hiddenKeys)
         }
 
-        val allWaypoints = if (_allWaypoints.value.any { it.visibilityKey() == waypointKey }) {
+        val allWaypoints = if (!includeInLists || _allWaypoints.value.any { it.visibilityKey() == waypointKey }) {
             _allWaypoints.value
         } else {
             (_allWaypoints.value + waypoint).distinctBy { it.visibilityKey() }
         }
-        val visibleWaypoints = if (_importedWaypoints.value.any { it.visibilityKey() == waypointKey }) {
+        val visibleWaypoints = if (!includeInLists || _importedWaypoints.value.any { it.visibilityKey() == waypointKey }) {
             _importedWaypoints.value
         } else {
             (_importedWaypoints.value + waypoint)
@@ -574,7 +612,40 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             .putString(PREF_ACTIVE_TRACKING_PAGE, TrackingPage.WAYPOINT.name)
             .putInt(PREF_ACTIVE_WAYPOINT_INDEX, activeIndex)
             .putString(PREF_ACTIVE_WAYPOINT_KEY, waypointKey)
+            .putString(PREF_ACTIVE_WAYPOINT_NAME, waypoint.name)
+            .putLong(PREF_ACTIVE_WAYPOINT_LAT_BITS, waypoint.latitude.toRawBits())
+            .putLong(PREF_ACTIVE_WAYPOINT_LON_BITS, waypoint.longitude.toRawBits())
+            .putLong(PREF_ACTIVE_WAYPOINT_ALT_BITS, waypoint.altitude.toRawBits())
+            .putLong(PREF_ACTIVE_WAYPOINT_TIME_MS, waypoint.timestampMs)
             .apply()
+    }
+
+    private fun restorePersistedActiveWaypointIfPresent() {
+        if (_activeWaypoint.value != null) return
+        _activeWaypoint.value = persistedActiveWaypoint()
+        if (_activeWaypoint.value != null && _activeWaypointIndex.value !in _importedWaypoints.value.indices) {
+            _activeWaypointIndex.value = NO_ACTIVE_WAYPOINT
+        }
+    }
+
+    private fun persistedActiveWaypoint(): Waypoint? {
+        val savedKey = settings.getString(PREF_ACTIVE_WAYPOINT_KEY, null) ?: return null
+        val name = settings.getString(PREF_ACTIVE_WAYPOINT_NAME, null) ?: return null
+        if (
+            !settings.contains(PREF_ACTIVE_WAYPOINT_LAT_BITS) ||
+            !settings.contains(PREF_ACTIVE_WAYPOINT_LON_BITS) ||
+            !settings.contains(PREF_ACTIVE_WAYPOINT_ALT_BITS)
+        ) {
+            return null
+        }
+        val waypoint = Waypoint(
+            name = name,
+            latitude = Double.fromBits(settings.getLong(PREF_ACTIVE_WAYPOINT_LAT_BITS, 0L)),
+            longitude = Double.fromBits(settings.getLong(PREF_ACTIVE_WAYPOINT_LON_BITS, 0L)),
+            altitude = Double.fromBits(settings.getLong(PREF_ACTIVE_WAYPOINT_ALT_BITS, 0L)),
+            timestampMs = settings.getLong(PREF_ACTIVE_WAYPOINT_TIME_MS, System.currentTimeMillis())
+        )
+        return waypoint.takeIf { it.visibilityKey() == savedKey || name == "Home" }
     }
 
     private fun clearActiveTrackingUiState() {
@@ -585,6 +656,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             .putString(PREF_ACTIVE_TRACKING_PAGE, TrackingPage.MAP.name)
             .remove(PREF_ACTIVE_WAYPOINT_INDEX)
             .remove(PREF_ACTIVE_WAYPOINT_KEY)
+            .remove(PREF_ACTIVE_WAYPOINT_NAME)
+            .remove(PREF_ACTIVE_WAYPOINT_LAT_BITS)
+            .remove(PREF_ACTIVE_WAYPOINT_LON_BITS)
+            .remove(PREF_ACTIVE_WAYPOINT_ALT_BITS)
+            .remove(PREF_ACTIVE_WAYPOINT_TIME_MS)
             .apply()
     }
 
@@ -611,11 +687,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         settings.edit()
             .remove(PREF_ACTIVE_WAYPOINT_INDEX)
             .remove(PREF_ACTIVE_WAYPOINT_KEY)
+            .remove(PREF_ACTIVE_WAYPOINT_NAME)
+            .remove(PREF_ACTIVE_WAYPOINT_LAT_BITS)
+            .remove(PREF_ACTIVE_WAYPOINT_LON_BITS)
+            .remove(PREF_ACTIVE_WAYPOINT_ALT_BITS)
+            .remove(PREF_ACTIVE_WAYPOINT_TIME_MS)
             .apply()
     }
 
     private fun defaultRideName(): String {
-        return "Ride ${SimpleDateFormat("MMM d h:mm a", Locale.getDefault()).format(Date())}"
+        return "Session ${SimpleDateFormat("MMM d h:mm a", Locale.getDefault()).format(Date())}"
     }
 
     companion object {
@@ -624,6 +705,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         private const val PREF_ACTIVE_TRACKING_PAGE = "active_tracking_page"
         private const val PREF_ACTIVE_WAYPOINT_INDEX = "active_waypoint_index"
         private const val PREF_ACTIVE_WAYPOINT_KEY = "active_waypoint_key"
+        private const val PREF_ACTIVE_WAYPOINT_NAME = "active_waypoint_name"
+        private const val PREF_ACTIVE_WAYPOINT_LAT_BITS = "active_waypoint_lat_bits"
+        private const val PREF_ACTIVE_WAYPOINT_LON_BITS = "active_waypoint_lon_bits"
+        private const val PREF_ACTIVE_WAYPOINT_ALT_BITS = "active_waypoint_alt_bits"
+        private const val PREF_ACTIVE_WAYPOINT_TIME_MS = "active_waypoint_time_ms"
         private const val PREF_HIDDEN_WAYPOINT_KEYS = "hidden_waypoint_keys"
         private const val NO_ACTIVE_WAYPOINT = -1
     }

@@ -10,9 +10,9 @@ fun RideNameScreen(
     onCancel: () -> Unit
 ) {
     NameEntryScreen(
-        title = "Name Ride",
-        speechPrompt = "Name this ride",
-        placeholder = "Say or type a ride name",
+        title = "Name Session",
+        speechPrompt = "Name this session",
+        placeholder = "Say or type a session name",
         accentColor = GreenStart,
         initialValue = initialName,
         confirmLabel = "Save",

@@ -45,7 +45,7 @@ object GpxWriter {
         synchronized(fileLock) {
             draftWritesEnabled = false
             val timestamp = fileNameFormat.format(Date())
-            val finalRideName = rideName?.takeIf { it.isNotBlank() } ?: "GPX Trail Ride $timestamp"
+            val finalRideName = rideName?.takeIf { it.isNotBlank() } ?: "GPX Trail Session $timestamp"
             val rideStartMs = trackPoints.firstOrNull()?.timestampMs ?: System.currentTimeMillis()
             val file = uniqueGpxFile(
                 dir = RideRepository.getGpxDir(context),
@@ -71,7 +71,7 @@ object GpxWriter {
         synchronized(fileLock) {
             if (!draftWritesEnabled || trackPoints.isEmpty()) return
             val file = File(RideRepository.getGpxDir(context), DRAFT_FILE_NAME)
-            file.writeText(buildRideGpx(trackPoints, waypoints, "Draft Ride (unsaved)"))
+            file.writeText(buildRideGpx(trackPoints, waypoints, "Draft Session (unsaved)"))
         }
     }
 
@@ -88,7 +88,7 @@ object GpxWriter {
             val draft = File(RideRepository.getGpxDir(context), DRAFT_FILE_NAME)
             if (!draft.exists() || draft.length() == 0L) return null
             val timestamp = fileNameFormat.format(Date(draft.lastModified()))
-            val dest = File(RideRepository.getGpxDir(context), "ride_recovered_$timestamp.gpx")
+            val dest = File(RideRepository.getGpxDir(context), "session_recovered_$timestamp.gpx")
             return if (draft.renameTo(dest)) dest else null
         }
     }
@@ -171,7 +171,7 @@ object GpxWriter {
             .replace(Regex("\\s+"), "_")
             .trim('_', '.', ' ')
             .take(80)
-            .ifBlank { "ride" }
+            .ifBlank { "session" }
     }
 
     private fun datedFileBaseName(name: String, timestampMs: Long): String {
@@ -181,7 +181,7 @@ object GpxWriter {
     }
 
     private fun String.removeDatePrefix(): String {
-        return replace(Regex("^\\d{8}_+"), "").ifBlank { "ride" }
+        return replace(Regex("^\\d{8}_+"), "").ifBlank { "session" }
     }
 
     private fun uniqueGpxFile(dir: File, baseName: String): File {

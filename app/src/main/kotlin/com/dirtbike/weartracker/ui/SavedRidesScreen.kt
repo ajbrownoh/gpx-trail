@@ -76,7 +76,7 @@ fun SavedRidesScreen(
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "Loading rides...",
+                    text = "Loading sessions...",
                     color = OrangeAccent,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold
@@ -95,7 +95,7 @@ fun SavedRidesScreen(
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "No rides saved yet",
+                    text = "No sessions saved yet",
                     color = TextGray,
                     fontSize = 13.sp
                 )
@@ -125,7 +125,7 @@ fun SavedRidesScreen(
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Text(
-                            text = "Saved Rides",
+                            text = "Saved Sessions",
                             color = OrangeAccent,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold

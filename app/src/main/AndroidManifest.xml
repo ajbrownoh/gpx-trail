@@ -71,7 +71,7 @@
             </intent-filter>
         </service>
 
-        <!-- Notifies user if watch rebooted during an active ride.
+        <!-- Notifies user if watch rebooted during an active session.
              exported=true is required so the SYSTEM can deliver BOOT_COMPLETED;
              with exported=false the broadcast is never delivered on API 26+. -->
         <receiver

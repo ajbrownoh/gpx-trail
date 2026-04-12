@@ -19,7 +19,7 @@ object GpxTransferPaths {
 
     fun parse(path: String): Metadata {
         val segments = Uri.parse("wear://gpxtrail$path").pathSegments
-        val fileName = segments.getOrNull(2)?.takeIf { it.isNotBlank() } ?: "ride.gpx"
+        val fileName = segments.getOrNull(2)?.takeIf { it.isNotBlank() } ?: "session.gpx"
         val rideName = segments.getOrNull(3)?.takeIf { it.isNotBlank() }
             ?: fileName.removeSuffix(".gpx")
         return Metadata(fileName = fileName, rideName = rideName)

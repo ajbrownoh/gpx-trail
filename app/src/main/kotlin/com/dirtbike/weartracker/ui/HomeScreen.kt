@@ -82,14 +82,14 @@ fun HomeScreen(
                 }
             }
 
-            // Interrupted-ride recovery banner
+            // Interrupted-session recovery banner
             if (hasDraft) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
                     Text(
-                        text = "Unsaved ride found",
+                        text = "Unsaved session found",
                         color = OrangeAccent,
                         fontSize = 10.sp,
                         textAlign = TextAlign.Center
@@ -143,7 +143,7 @@ fun HomeScreen(
                 )
             }
 
-            // Saved rides link
+            // Saved sessions link
             Button(
                 onClick = onSavedRides,
                 modifier = Modifier
@@ -152,7 +152,7 @@ fun HomeScreen(
                 colors = ButtonDefaults.buttonColors(backgroundColor = OrangeDim)
             ) {
                 Text(
-                    text = "Saved Rides",
+                    text = "Saved Sessions",
                     color = TextWhite,
                     fontSize = 10.sp
                 )

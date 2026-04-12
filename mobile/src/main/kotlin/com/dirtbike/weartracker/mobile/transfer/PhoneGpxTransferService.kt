@@ -144,7 +144,7 @@ class PhoneGpxTransferService : WearableListenerService() {
         val cleaned = rawName
             .replace(Regex("[\\\\/:*?\"<>|]"), "_")
             .trim()
-            .ifBlank { "ride.gpx" }
+            .ifBlank { "session.gpx" }
         return if (cleaned.endsWith(".gpx", ignoreCase = true)) cleaned else "$cleaned.gpx"
     }
 

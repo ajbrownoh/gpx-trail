@@ -78,7 +78,6 @@ fun TrackingScreen(
     currentTimeFormatted: String,
     distanceFormatted: String,
     isPaused: Boolean,
-    hasGpsFix: Boolean,
     gpsStatus: String,
     trackPoints: List<TrackPoint>,
     latestGpsPoint: TrackPoint?,
@@ -87,12 +86,15 @@ fun TrackingScreen(
     isWaypointsLoading: Boolean,
     activeWaypoint: Waypoint?,
     activeWaypointIndex: Int,
+    canSelectHome: Boolean,
     trackingPage: TrackingPage,
     isMapZoomedIn: Boolean,
     onZoomIn: () -> Unit,
     onZoomOut: () -> Unit,
     onTrackingPageChange: (TrackingPage) -> Unit,
     onSelectWaypoint: (Int) -> Unit,
+    onClearWaypoint: () -> Unit,
+    onSelectHomeWaypoint: () -> Unit,
     onPauseResume: () -> Unit,
     onStop: () -> Unit,
     onMark: () -> Unit
@@ -102,6 +104,18 @@ fun TrackingScreen(
     val canMarkWaypoint = hasTrackHistory && !isPaused
     val zoomFactor = if (isMapZoomedIn) 2.35f else 1f
     val currentPoint = latestGpsPoint ?: trackPoints.lastOrNull()
+    val activeWaypointDistanceText = if (currentPoint != null && activeWaypoint != null) {
+        formatWaypointDistance(
+            distanceMeters(
+                currentPoint.latitude,
+                currentPoint.longitude,
+                activeWaypoint.latitude,
+                activeWaypoint.longitude
+            )
+        )
+    } else {
+        null
+    }
     val bearingToActiveWaypoint = if (currentPoint != null && activeWaypoint != null) {
         bearingTo(
             currentPoint.latitude,
@@ -112,18 +126,7 @@ fun TrackingScreen(
     } else {
         null
     }
-    val gpsChipText = when {
-        isPaused -> "PAUSED"
-        gpsStatus.contains("lost", ignoreCase = true) -> "GPS LOST"
-        hasGpsFix -> "GPS LOCKED"
-        else -> gpsStatus.removeSuffix("...").uppercase()
-    }
-    val gpsChipColor = when {
-        isPaused -> OrangeAccent
-        gpsStatus.contains("lost", ignoreCase = true) -> RedStop
-        hasGpsFix -> GreenStart
-        else -> OrangeAccent
-    }
+    val isGpsLost = gpsStatus.contains("lost", ignoreCase = true)
     var confirmingStop by remember { mutableStateOf(false) }
 
     LaunchedEffect(confirmingStop) {
@@ -162,7 +165,10 @@ fun TrackingScreen(
                 activeWaypointIndex = activeWaypointIndex,
                 currentPoint = currentPoint,
                 heading = displayHeading,
+                canSelectHome = canSelectHome,
                 onSelectWaypoint = onSelectWaypoint,
+                onClearWaypoint = onClearWaypoint,
+                onSelectHomeWaypoint = onSelectHomeWaypoint,
                 modifier = Modifier.fillMaxSize()
             )
             return@Box
@@ -252,12 +258,15 @@ fun TrackingScreen(
                 Spacer(modifier = Modifier.height(4.dp))
             }
 
-            StatusChip(
-                text = gpsChipText,
-                chipColor = gpsChipColor
+            TrackingBottomStatus(
+                waypointDistanceText = activeWaypointDistanceText,
+                isPaused = isPaused,
+                isGpsLost = isGpsLost
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            if (activeWaypointDistanceText != null || isPaused || isGpsLost) {
+                Spacer(modifier = Modifier.height(10.dp))
+            }
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(9.dp),
@@ -347,6 +356,36 @@ private fun StatusChip(
 }
 
 @Composable
+private fun TrackingBottomStatus(
+    waypointDistanceText: String?,
+    isPaused: Boolean,
+    isGpsLost: Boolean
+) {
+    if (waypointDistanceText == null && !isPaused && !isGpsLost) return
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (isPaused) {
+            StatusChip(text = "PAUSED", chipColor = OrangeAccent)
+        }
+        if (isGpsLost) {
+            StatusChip(text = "GPS LOST", chipColor = RedStop)
+        }
+        waypointDistanceText?.let {
+            Text(
+                text = it,
+                color = WaypointBlue,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.ExtraBold,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
 private fun WaypointNavigationScreen(
     importedWaypoints: List<Waypoint>,
     isWaypointsLoading: Boolean,
@@ -354,7 +393,10 @@ private fun WaypointNavigationScreen(
     activeWaypointIndex: Int,
     currentPoint: TrackPoint?,
     heading: Float,
+    canSelectHome: Boolean,
     onSelectWaypoint: (Int) -> Unit,
+    onClearWaypoint: () -> Unit,
+    onSelectHomeWaypoint: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showWaypointList by remember {
@@ -445,6 +487,55 @@ private fun WaypointNavigationScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Button(
+                onClick = {
+                    if (canSelectHome) {
+                        onSelectHomeWaypoint()
+                        showWaypointList = false
+                    }
+                },
+                modifier = Modifier
+                    .height(28.dp)
+                    .weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = if (canSelectHome) GreenStart else OrangeDim
+                )
+            ) {
+                Text(
+                    text = "Home",
+                    color = if (canSelectHome) BackgroundBlack else TextWhite,
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            if (activeWaypoint != null) {
+                Button(
+                    onClick = {
+                        onClearWaypoint()
+                        showWaypointList = true
+                    },
+                    modifier = Modifier
+                        .height(28.dp)
+                        .weight(1f),
+                    colors = ButtonDefaults.buttonColors(backgroundColor = OrangeDim)
+                ) {
+                    Text(
+                        text = "Clear",
+                        color = TextWhite,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        }
+
         ScalingLazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
@@ -468,8 +559,13 @@ private fun WaypointNavigationScreen(
                         waypoint = waypoint,
                         selected = index == activeWaypointIndex,
                         onClick = {
-                            onSelectWaypoint(index)
-                            showWaypointList = false
+                            if (index == activeWaypointIndex) {
+                                onClearWaypoint()
+                                showWaypointList = true
+                            } else {
+                                onSelectWaypoint(index)
+                                showWaypointList = false
+                            }
                         }
                     )
                 }

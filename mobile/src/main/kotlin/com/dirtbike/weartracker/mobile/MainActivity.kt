@@ -129,7 +129,7 @@ class MainActivity : Activity() {
             ))
 
             addView(TextView(this@MainActivity).apply {
-                text = "Watch to phone: open Saved Rides and tap Phone. Phone to watch: send a GPX here, then open GPX Trail on the watch."
+                text = "Watch to phone: open Saved Sessions and tap Phone. Phone to watch: send a GPX here, then open GPX Trail on the watch."
                 textSize = 13f
                 setTextColor(Color.rgb(160, 168, 176))
                 gravity = Gravity.CENTER
@@ -142,7 +142,7 @@ class MainActivity : Activity() {
         val latest = ReceivedRideStore.latest(this)
         if (latest == null) {
             latestTitle.text = "Waiting for GPX"
-            latestDetails.text = "No ride has been received yet."
+            latestDetails.text = "No session has been received yet."
             shareButton.isEnabled = false
             return
         }

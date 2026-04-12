@@ -63,7 +63,7 @@ class MainActivity : ComponentActivity() {
         } else if (pendingRideStart) {
             Toast.makeText(
                 this,
-                "Location and activity permissions are required to track rides.",
+                "Location and activity permissions are required to track sessions.",
                 Toast.LENGTH_LONG
             ).show()
         }
@@ -121,7 +121,6 @@ class MainActivity : ComponentActivity() {
                 val bearingToStart by viewModel.bearingToStart.collectAsState()
                 val isTracking by viewModel.isTracking.collectAsState()
                 val isPaused by viewModel.isPaused.collectAsState()
-                val hasGpsFix by viewModel.hasGpsFix.collectAsState()
                 val gpsStatus by viewModel.gpsStatus.collectAsState()
                 val compassHeading by viewModel.compassHeading.collectAsState()
                 val isMapZoomedIn by viewModel.isMapZoomedIn.collectAsState()
@@ -153,11 +152,8 @@ class MainActivity : ComponentActivity() {
                 val elapsedFmt = viewModel.formatElapsed(elapsedSeconds)
                 val distanceFmt = viewModel.formatDistance(totalDistanceMeters)
                 val clockTimeFmt = viewModel.formatClockTime(currentTimeMs)
-                val ambientGpsStatus = when {
-                    isPaused -> "PAUSED"
-                    gpsStatus.contains("lost", ignoreCase = true) -> "GPS LOST"
-                    hasGpsFix -> "GPS LOCKED"
-                    else -> "GPS SEARCHING"
+                val ambientGpsStatus = "GPS LOST".takeIf {
+                    gpsStatus.contains("lost", ignoreCase = true)
                 }
                 val visibleScreen = if (screen == Screen.HOME && isTracking) {
                     Screen.TRACKING
@@ -222,7 +218,6 @@ class MainActivity : ComponentActivity() {
                         currentTimeFormatted = clockTimeFmt,
                         distanceFormatted = distanceFmt,
                         isPaused = isPaused,
-                        hasGpsFix = hasGpsFix,
                         gpsStatus = gpsStatus,
                         trackPoints = trackPoints,
                         latestGpsPoint = latestGpsPoint,
@@ -231,12 +226,15 @@ class MainActivity : ComponentActivity() {
                         isWaypointsLoading = isWaypointsLoading,
                         activeWaypoint = activeWaypoint,
                         activeWaypointIndex = activeWaypointIndex,
+                        canSelectHome = trackPoints.isNotEmpty(),
                         trackingPage = trackingPage,
                         isMapZoomedIn = isMapZoomedIn,
                         onZoomIn = { viewModel.zoomMapIn() },
                         onZoomOut = { viewModel.zoomMapOut() },
                         onTrackingPageChange = { page -> viewModel.setTrackingPage(page) },
                         onSelectWaypoint = { index -> viewModel.selectImportedWaypoint(index) },
+                        onClearWaypoint = { viewModel.clearActiveWaypoint() },
+                        onSelectHomeWaypoint = { viewModel.selectHomeWaypoint() },
                         onPauseResume = { viewModel.onPauseResumeTapped() },
                         onStop = { viewModel.onStopTapped() },
                         onMark = { viewModel.onMarkSpotTapped() }

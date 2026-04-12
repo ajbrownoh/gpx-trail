@@ -6,10 +6,10 @@
     <string name="mark_spot">MARK</string>
     <string name="save_ride">Save</string>
     <string name="discard_ride">Discard</string>
-    <string name="saved_rides">Saved Rides</string>
+    <string name="saved_rides">Saved Sessions</string>
     <string name="share">Share</string>
     <string name="name_this_spot">Name this spot</string>
-    <string name="tracking_notification_channel">Ride Tracking</string>
-    <string name="tracking_notification_title">Tracking your ride...</string>
+    <string name="tracking_notification_channel">Session Tracking</string>
+    <string name="tracking_notification_title">Tracking your session...</string>
     <string name="tracking_notification_text">GPS active</string>
 </resources>

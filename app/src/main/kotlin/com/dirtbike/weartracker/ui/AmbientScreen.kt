@@ -15,7 +15,7 @@ import com.dirtbike.weartracker.ui.theme.*
 /**
  * Minimal ambient (always-on) display.
  *
- * Shown when the watch dims to ambient mode during an active ride.
+ * Shown when the watch dims to ambient mode during an active session.
  * Renders only elapsed time and distance on a pure-black background —
  * no animations, no canvas drawing, no color fills — to minimise
  * AMOLED power draw.
@@ -25,7 +25,7 @@ fun AmbientScreen(
     currentTimeFormatted: String,
     elapsedFormatted: String,
     distanceFormatted: String,
-    gpsStatusText: String,
+    gpsStatusText: String?,
     batteryPercentage: Int?
 ) {
     Box(
@@ -82,15 +82,17 @@ fun AmbientScreen(
             )
         }
 
-        Text(
-            text = gpsStatusText,
-            color = TextGray,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Medium,
-            textAlign = TextAlign.Center,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 18.dp)
-        )
+        gpsStatusText?.let {
+            Text(
+                text = it,
+                color = RedStop,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 18.dp)
+            )
+        }
     }
 }

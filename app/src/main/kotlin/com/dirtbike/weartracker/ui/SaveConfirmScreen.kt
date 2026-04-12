@@ -50,7 +50,7 @@ fun SaveConfirmScreen(
                 .padding(horizontal = 12.dp)
         ) {
             Text(
-                text = "Ride Complete",
+                text = "Session Complete",
                 color = OrangeAccent,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold

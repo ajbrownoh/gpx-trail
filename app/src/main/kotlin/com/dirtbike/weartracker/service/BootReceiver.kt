@@ -9,7 +9,7 @@ import android.content.Intent
 
 /**
  * Fires on device boot. If tracking was active when the watch restarted,
- * shows a persistent notification so the user knows their ride was interrupted.
+ * shows a persistent notification so the user knows their session was interrupted.
  */
 class BootReceiver : BroadcastReceiver() {
 
@@ -28,14 +28,14 @@ class BootReceiver : BroadcastReceiver() {
 
         val channel = NotificationChannel(
             channelId,
-            "Ride Interrupted",
+            "Session Interrupted",
             NotificationManager.IMPORTANCE_HIGH
         )
         nm.createNotificationChannel(channel)
 
         val notification = Notification.Builder(context, channelId)
-            .setContentTitle("Ride tracking interrupted")
-            .setContentText("Your watch restarted during a ride. Open GPX Trail to start a new ride.")
+            .setContentTitle("Session tracking interrupted")
+            .setContentText("Your watch restarted during a session. Open GPX Trail to start a new session.")
             .setSmallIcon(android.R.drawable.ic_dialog_alert)
             .setAutoCancel(true)
             .build()

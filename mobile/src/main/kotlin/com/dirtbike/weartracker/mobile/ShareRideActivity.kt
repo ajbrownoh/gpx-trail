@@ -28,7 +28,7 @@ class ShareRideActivity : Activity() {
         val shareIntent = Intent(Intent.ACTION_SEND).apply {
             type = "application/gpx+xml"
             putExtra(Intent.EXTRA_STREAM, Uri.parse(uriString))
-            putExtra(Intent.EXTRA_SUBJECT, fileName ?: "GPX Trail ride")
+            putExtra(Intent.EXTRA_SUBJECT, fileName ?: "GPX Trail session")
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
 

@@ -210,7 +210,7 @@ object RideGpxParser {
             .replace('_', ' ')
             .replace('-', ' ')
             .trim()
-            .ifBlank { "Ride ${SimpleDateFormat("MMM d", Locale.US).format(Date(file.lastModified()))}" }
+            .ifBlank { "Session ${SimpleDateFormat("MMM d", Locale.US).format(Date(file.lastModified()))}" }
     }
 
     private fun localName(name: String?): String {

@@ -760,7 +760,7 @@ class TrackingService : Service() {
     private fun createNotificationChannel() {
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "Ride Tracking",
+            "Session Tracking",
             NotificationManager.IMPORTANCE_LOW
         ).apply {
             description = "Shows while GPS tracking is active"
@@ -787,7 +787,7 @@ class TrackingService : Service() {
         )
 
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(if (_isPaused.value) "Ride paused" else "Tracking your ride")
+            .setContentTitle(if (_isPaused.value) "Session paused" else "Tracking your session")
             .setContentText(if (_isPaused.value) "Paused - tap to return" else "GPS active - tap to return")
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
             .setCategory(NotificationCompat.CATEGORY_WORKOUT)
@@ -797,14 +797,14 @@ class TrackingService : Service() {
             .setOnlyAlertOnce(true)
 
         val ongoingStatus = Status.Builder()
-            .addTemplate(if (_isPaused.value) "Ride paused" else "Ride tracking")
+            .addTemplate(if (_isPaused.value) "Session paused" else "Session tracking")
             .build()
 
         OngoingActivity.Builder(applicationContext, NOTIFICATION_ID, builder)
             .setStaticIcon(android.R.drawable.ic_menu_mylocation)
             .setTouchIntent(contentIntent)
             .setStatus(ongoingStatus)
-            .setTitle("Ride Tracker")
+            .setTitle("GPX Trail")
             .build()
             .apply(applicationContext)
 
