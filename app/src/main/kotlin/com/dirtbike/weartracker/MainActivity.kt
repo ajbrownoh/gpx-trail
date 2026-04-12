@@ -24,6 +24,7 @@ import androidx.compose.runtime.produceState
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.wear.ambient.AmbientLifecycleObserver
+import com.dirtbike.weartracker.data.Waypoint
 import com.dirtbike.weartracker.ui.AmbientScreen
 import com.dirtbike.weartracker.ui.HomeScreen
 import com.dirtbike.weartracker.ui.MarkSpotScreen
@@ -41,6 +42,7 @@ class MainActivity : ComponentActivity() {
 
     private val viewModel: MainViewModel by viewModels()
     private var pendingRideStart = false
+    private var pendingRideStartWaypoint: Waypoint? = null
     private lateinit var sensorManager: SensorManager
     private var headingSensor: Sensor? = null
     private val rotationMatrix = FloatArray(9)
@@ -57,7 +59,7 @@ class MainActivity : ComponentActivity() {
             grantResults[permission] == true || hasPermission(permission)
         }
         if (allGranted && pendingRideStart) {
-            viewModel.startRide()
+            viewModel.startRide(pendingRideStartWaypoint)
         } else if (pendingRideStart) {
             Toast.makeText(
                 this,
@@ -66,6 +68,7 @@ class MainActivity : ComponentActivity() {
             ).show()
         }
         pendingRideStart = false
+        pendingRideStartWaypoint = null
     }
 
     private val ambientCallback = object : AmbientLifecycleObserver.AmbientLifecycleCallback {
@@ -283,7 +286,7 @@ class MainActivity : ComponentActivity() {
                             hiddenWaypointKeys = hiddenWaypointKeys,
                             onHideWaypoint = { waypoint -> viewModel.hideWaypoint(waypoint) },
                             onShowWaypoint = { waypoint -> viewModel.showWaypoint(waypoint) },
-                            onShowAllWaypoints = { viewModel.showAllWaypoints(rideMap.waypoints) },
+                            onStartTracking = { waypoint -> startRideOrRequestPermissions(waypoint) },
                             onBack = { viewModel.closeSavedRideMap() }
                         )
                     }
@@ -291,9 +294,9 @@ class MainActivity : ComponentActivity() {
                     Screen.WAYPOINTS -> WaypointManagerScreen(
                         waypoints = allWaypoints,
                         hiddenWaypointKeys = hiddenWaypointKeys,
-                        onHideWaypoint = { waypoint -> viewModel.hideWaypoint(waypoint) },
-                        onShowWaypoint = { waypoint -> viewModel.showWaypoint(waypoint) },
-                        onShowAllWaypoints = { viewModel.showAllWaypoints(allWaypoints) },
+                        onHideWaypoints = { waypoints -> viewModel.hideWaypoints(waypoints) },
+                        onShowWaypoints = { waypoints -> viewModel.showWaypoints(waypoints) },
+                        onStartTracking = { waypoint -> startRideOrRequestPermissions(waypoint) },
                         onBack = { viewModel.closeWaypointManager() }
                     )
                 }
@@ -320,12 +323,13 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
     }
 
-    private fun startRideOrRequestPermissions() {
+    private fun startRideOrRequestPermissions(selectedWaypoint: Waypoint? = null) {
         if (hasTrackingPermissions()) {
-            viewModel.startRide()
+            viewModel.startRide(selectedWaypoint)
             return
         }
         pendingRideStart = true
+        pendingRideStartWaypoint = selectedWaypoint
         permissionLauncher.launch(trackingPermissions)
     }
 

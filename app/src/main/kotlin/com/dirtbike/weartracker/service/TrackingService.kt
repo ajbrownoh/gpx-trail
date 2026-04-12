@@ -298,12 +298,14 @@ class TrackingService : Service() {
         }
         if (!_isPaused.value) return
         val now = System.currentTimeMillis()
-        if (pauseStartedMs > 0L) {
+        val pausedBeforeClockStarted = !rideClockStarted && _trackPoints.value.isEmpty()
+        if (pauseStartedMs > 0L && !pausedBeforeClockStarted) {
             totalPausedDurationMs += (now - pauseStartedMs).coerceAtLeast(0L)
         }
         pauseStartedMs = 0L
         _isPaused.value = false
-        nextPointStartsNewSegment = _trackPoints.value.isNotEmpty()
+        val startedFromPausedFix = startFromPausedFirstFix(now)
+        nextPointStartsNewSegment = _trackPoints.value.isNotEmpty() && !startedFromPausedFix
         recentRawPoints.clear()
         _gpsStatus.value = if (now - lastGpsFixTimeMs <= GPS_SIGNAL_TIMEOUT_MS) {
             GPS_STATUS_LOCKED
@@ -313,6 +315,20 @@ class TrackingService : Service() {
         persistSessionState()
         refreshNotification()
         TrackingDebugLog.write(this, "tracking resumed elapsed=${_elapsedSeconds.value}")
+    }
+
+    private fun startFromPausedFirstFix(nowMs: Long): Boolean {
+        if (rideClockStarted || _trackPoints.value.isNotEmpty()) return false
+        if (lastGpsFixTimeMs <= 0L || nowMs - lastGpsFixTimeMs > GPS_SIGNAL_TIMEOUT_MS) return false
+
+        val latestFix = _latestGpsPoint.value ?: return false
+        val firstPoint = latestFix.copy(timestampMs = nowMs, segmentId = 0)
+        beginTrackingFromFirstFix(firstPoint.timestampMs)
+        _trackPoints.value = listOf(firstPoint)
+        nextPointStartsNewSegment = false
+        saveDraftAsync()
+        TrackingDebugLog.write(this, "tracking started from paused first fix")
+        return true
     }
 
     private fun startHealthServicesOrFallback() {
@@ -396,6 +412,13 @@ class TrackingService : Service() {
         if (!_isPaused.value) {
             _gpsStatus.value = GPS_STATUS_LOCKED
         }
+        _latestGpsPoint.value = TrackPoint(
+            latitude = lat,
+            longitude = lon,
+            altitude = alt,
+            timestampMs = now,
+            segmentId = currentPoints.lastOrNull()?.segmentId ?: 0
+        )
 
         if (!hadGpsFix) {
             if (gpsWasLost && hasEverLockedGps) {

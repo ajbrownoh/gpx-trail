@@ -189,8 +189,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun hideWaypoint(waypoint: Waypoint) {
+        hideWaypoints(listOf(waypoint))
+    }
+
+    fun hideWaypoints(waypoints: List<Waypoint>) {
+        if (waypoints.isEmpty()) return
         val hiddenKeys = hiddenWaypointKeys().toMutableSet()
-        hiddenKeys += waypoint.visibilityKey()
+        hiddenKeys += waypoints.map { it.visibilityKey() }
         saveHiddenWaypointKeys(hiddenKeys)
 
         clearActiveWaypointIfHidden(hiddenKeys)
@@ -199,8 +204,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun showWaypoint(waypoint: Waypoint) {
+        showWaypoints(listOf(waypoint))
+    }
+
+    fun showWaypoints(waypoints: List<Waypoint>) {
+        if (waypoints.isEmpty()) return
         val hiddenKeys = hiddenWaypointKeys().toMutableSet()
-        hiddenKeys -= waypoint.visibilityKey()
+        hiddenKeys.removeAll(waypoints.map { it.visibilityKey() }.toSet())
         saveHiddenWaypointKeys(hiddenKeys)
         refreshImportedWaypoints()
     }
@@ -243,20 +253,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun startRide() {
+    fun startRide(selectedWaypoint: Waypoint? = null) {
         val ctx = getApplication<Application>()
         if (isTracking.value) {
+            selectedWaypoint?.let { activateWaypointForTracking(it) }
             _screen.value = Screen.TRACKING
             return
         }
         _isMapZoomedIn.value = false
-        _trackingPage.value = TrackingPage.MAP
-        _activeWaypointIndex.value = NO_ACTIVE_WAYPOINT
-        _activeWaypoint.value = null
-        settings.edit()
-            .putString(PREF_ACTIVE_TRACKING_PAGE, TrackingPage.MAP.name)
-            .remove(PREF_ACTIVE_WAYPOINT_INDEX)
-            .apply()
+        if (selectedWaypoint == null) {
+            clearActiveTrackingUiState()
+        } else {
+            activateWaypointForTracking(selectedWaypoint)
+        }
         ctx.startForegroundService(
             Intent(ctx, TrackingService::class.java).apply {
                 putExtra(TrackingService.EXTRA_TRACKING_QUALITY_MODE, _trackingQualityMode.value.name)
@@ -523,6 +532,39 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }.takeIf { it in imported.indices } ?: NO_ACTIVE_WAYPOINT
         _activeWaypointIndex.value = index
         _activeWaypoint.value = imported.getOrNull(index)
+    }
+
+    private fun activateWaypointForTracking(waypoint: Waypoint) {
+        val waypointKey = waypoint.visibilityKey()
+        val hiddenKeys = hiddenWaypointKeys().toMutableSet()
+        if (hiddenKeys.remove(waypointKey)) {
+            saveHiddenWaypointKeys(hiddenKeys)
+        }
+
+        val allWaypoints = if (_allWaypoints.value.any { it.visibilityKey() == waypointKey }) {
+            _allWaypoints.value
+        } else {
+            (_allWaypoints.value + waypoint).distinctBy { it.visibilityKey() }
+        }
+        val visibleWaypoints = if (_importedWaypoints.value.any { it.visibilityKey() == waypointKey }) {
+            _importedWaypoints.value
+        } else {
+            (_importedWaypoints.value + waypoint)
+                .distinctBy { it.visibilityKey() }
+                .sortedBy { it.name.lowercase(Locale.US) }
+        }
+        val activeIndex = visibleWaypoints.indexOfFirst { it.visibilityKey() == waypointKey }
+
+        _allWaypoints.value = allWaypoints
+        _importedWaypoints.value = visibleWaypoints
+        _trackingPage.value = TrackingPage.WAYPOINT
+        _activeWaypointIndex.value = activeIndex
+        _activeWaypoint.value = visibleWaypoints.getOrNull(activeIndex) ?: waypoint
+        settings.edit()
+            .putString(PREF_ACTIVE_TRACKING_PAGE, TrackingPage.WAYPOINT.name)
+            .putInt(PREF_ACTIVE_WAYPOINT_INDEX, activeIndex)
+            .putString(PREF_ACTIVE_WAYPOINT_KEY, waypointKey)
+            .apply()
     }
 
     private fun clearActiveTrackingUiState() {

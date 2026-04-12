@@ -14,12 +14,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -39,6 +42,7 @@ import com.dirtbike.weartracker.ui.theme.OrangeAccent
 import com.dirtbike.weartracker.ui.theme.OrangeDim
 import com.dirtbike.weartracker.ui.theme.TextGray
 import com.dirtbike.weartracker.ui.theme.TextWhite
+import com.dirtbike.weartracker.ui.theme.WaypointBlue
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -49,9 +53,10 @@ fun SavedRideMapScreen(
     hiddenWaypointKeys: Set<String>,
     onHideWaypoint: (Waypoint) -> Unit,
     onShowWaypoint: (Waypoint) -> Unit,
-    onShowAllWaypoints: () -> Unit,
+    onStartTracking: (Waypoint) -> Unit,
     onBack: () -> Unit
 ) {
+    var showHiddenWaypoints by remember { mutableStateOf(false) }
     val dateFmt = remember { SimpleDateFormat("MMM d, h:mm a", Locale.US) }
     val visibleWaypoints = remember(rideMap.waypoints, hiddenWaypointKeys) {
         rideMap.waypoints.filterNot { it.visibilityKey() in hiddenWaypointKeys }
@@ -61,6 +66,9 @@ fun SavedRideMapScreen(
     }
     val hiddenCount = remember(rideMap.waypoints, hiddenWaypointKeys) {
         rideMap.waypoints.count { it.visibilityKey() in hiddenWaypointKeys }
+    }
+    val displayedWaypoints = remember(sortedWaypoints, hiddenWaypointKeys, showHiddenWaypoints) {
+        sortedWaypoints.filter { showHiddenWaypoints || it.visibilityKey() !in hiddenWaypointKeys }
     }
 
     ScalingLazyColumn(
@@ -180,12 +188,14 @@ fun SavedRideMapScreen(
 
                 if (hiddenCount > 0) {
                     Button(
-                        onClick = onShowAllWaypoints,
-                        modifier = Modifier.height(26.dp),
+                        onClick = { showHiddenWaypoints = !showHiddenWaypoints },
+                        modifier = Modifier
+                            .height(26.dp)
+                            .width(104.dp),
                         colors = ButtonDefaults.buttonColors(backgroundColor = OrangeDim)
                     ) {
                         Text(
-                            text = "Show all $hiddenCount hidden",
+                            text = if (showHiddenWaypoints) "Hide hidden" else "Show hidden",
                             color = TextWhite,
                             fontSize = 8.sp,
                             fontWeight = FontWeight.Bold,
@@ -196,7 +206,18 @@ fun SavedRideMapScreen(
             }
         }
 
-        itemsIndexed(sortedWaypoints) { index, waypoint ->
+        if (displayedWaypoints.isEmpty() && hiddenCount > 0) {
+            item {
+                Text(
+                    text = "Hidden waypoints are hidden",
+                    color = TextGray,
+                    fontSize = 10.sp,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+
+        itemsIndexed(displayedWaypoints) { index, waypoint ->
             val isHidden = waypoint.visibilityKey() in hiddenWaypointKeys
             val visibleIndex = visibleWaypoints.indexOfFirst {
                 it.visibilityKey() == waypoint.visibilityKey()
@@ -211,7 +232,8 @@ fun SavedRideMapScreen(
                     } else {
                         onHideWaypoint(waypoint)
                     }
-                }
+                },
+                onStartTracking = { onStartTracking(waypoint) }
             )
         }
 
@@ -272,9 +294,10 @@ private fun WaypointLegendRow(
     waypoint: Waypoint,
     color: Color,
     isHidden: Boolean,
-    onToggleVisibility: () -> Unit
+    onToggleVisibility: () -> Unit,
+    onStartTracking: () -> Unit
 ) {
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .background(
@@ -282,40 +305,63 @@ private fun WaypointLegendRow(
                 shape = RoundedCornerShape(12.dp)
             )
             .padding(horizontal = 10.dp, vertical = 7.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        LegendDot(color = color)
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        Text(
-            text = if (isHidden) "${waypoint.name} (hidden)" else waypoint.name,
-            color = if (isHidden) TextGray else TextWhite,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Medium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f)
-        )
-
-        Spacer(modifier = Modifier.width(6.dp))
-
-        Button(
-            onClick = onToggleVisibility,
-            modifier = Modifier
-                .height(26.dp)
-                .width(48.dp),
-            colors = ButtonDefaults.buttonColors(
-                backgroundColor = if (isHidden) GreenStart else OrangeDim
-            )
+        Row(
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            LegendDot(color = color)
+
+            Spacer(modifier = Modifier.width(8.dp))
+
             Text(
-                text = if (isHidden) "Show" else "Hide",
-                color = if (isHidden) BackgroundBlack else TextWhite,
-                fontSize = 8.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
+                text = if (isHidden) "${waypoint.name} (hidden)" else waypoint.name,
+                color = if (isHidden) TextGray else TextWhite,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
             )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Button(
+                onClick = onStartTracking,
+                modifier = Modifier
+                    .height(26.dp)
+                    .weight(1f),
+                colors = ButtonDefaults.buttonColors(backgroundColor = WaypointBlue)
+            ) {
+                Text(
+                    text = "Track",
+                    color = BackgroundBlack,
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            Button(
+                onClick = onToggleVisibility,
+                modifier = Modifier
+                    .height(26.dp)
+                    .weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = if (isHidden) GreenStart else OrangeDim
+                )
+            ) {
+                Text(
+                    text = if (isHidden) "Show" else "Hide",
+                    color = if (isHidden) BackgroundBlack else TextWhite,
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+            }
         }
     }
 }

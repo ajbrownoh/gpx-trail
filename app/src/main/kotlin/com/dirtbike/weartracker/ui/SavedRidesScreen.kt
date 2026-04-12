@@ -133,7 +133,9 @@ fun SavedRidesScreen(
 
                         Button(
                             onClick = onWaypoints,
-                            modifier = Modifier.height(30.dp),
+                            modifier = Modifier
+                                .height(30.dp)
+                                .width(112.dp),
                             colors = ButtonDefaults.buttonColors(backgroundColor = OrangeDim)
                         ) {
                             Text(
