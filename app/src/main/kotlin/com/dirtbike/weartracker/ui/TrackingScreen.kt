@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -497,6 +498,8 @@ private fun WaypointArrowOnlyScreen(
             .fillMaxSize()
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
+        val arrowVerticalNudge = waypointArrowVerticalNudgeDp(relativeBearing)
+
         Text(
             text = "WAYPOINT NAV",
             color = WaypointBlue,
@@ -517,6 +520,7 @@ private fun WaypointArrowOnlyScreen(
             Canvas(
                 modifier = Modifier
                     .size(130.dp)
+                    .offset(y = arrowVerticalNudge.dp)
                     .graphicsLayer { rotationZ = relativeBearing }
             ) {
                 drawWaypointArrow(
@@ -781,7 +785,7 @@ private fun DrawScope.drawWaypointArrow(color: Color) {
     val cy = size.height / 2f
     val len = size.minDimension * 0.42f
     val halfW = len * 0.34f
-    val arrowCenterY = cy + len * 0.14f
+    val arrowCenterY = cy + len * 0.19f
 
     val arrowPath = Path().apply {
         moveTo(cx, arrowCenterY - len)
@@ -1007,6 +1011,12 @@ private fun formatWaypointDistance(meters: Double): String {
     } else {
         "%.1f mi".format(miles)
     }
+}
+
+private fun waypointArrowVerticalNudgeDp(relativeBearing: Float): Float {
+    val upness = ((cos(Math.toRadians(normalizeDegrees(relativeBearing).toDouble())) + 1.0) / 2.0)
+        .toFloat()
+    return 12f * upness * upness
 }
 
 private fun normalizeDegrees(value: Float): Float {
