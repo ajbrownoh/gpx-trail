@@ -34,7 +34,8 @@ enum class Screen {
     NAME_RIDE,
     SAVE_CONFIRM,
     SAVED_RIDES,
-    SAVED_RIDE_MAP
+    SAVED_RIDE_MAP,
+    WAYPOINTS
 }
 
 enum class TrackingPage {
@@ -389,7 +390,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun navigateToSavedRides() {
         refreshSavedRides()
+        refreshImportedWaypoints()
         _screen.value = Screen.SAVED_RIDES
+    }
+
+    fun navigateToWaypoints() {
+        refreshImportedWaypoints()
+        _screen.value = Screen.WAYPOINTS
     }
 
     fun navigateHome() {
@@ -414,6 +421,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun closeSavedRideMap() {
         _selectedRideMap.value = null
+        _screen.value = Screen.SAVED_RIDES
+    }
+
+    fun closeWaypointManager() {
         _screen.value = Screen.SAVED_RIDES
     }
 

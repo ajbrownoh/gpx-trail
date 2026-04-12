@@ -51,6 +51,7 @@ fun SavedRidesScreen(
     onOpenMap: (RideSummary) -> Unit,
     onRename: (RideSummary) -> Unit,
     onDelete: (RideSummary) -> Unit,
+    onWaypoints: () -> Unit,
     onBack: () -> Unit
 ) {
     val dateFmt = remember { SimpleDateFormat("MMM d  h:mm a", Locale.US) }
@@ -119,12 +120,30 @@ fun SavedRidesScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 item {
-                    Text(
-                        text = "Saved Rides",
-                        color = OrangeAccent,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = "Saved Rides",
+                            color = OrangeAccent,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Button(
+                            onClick = onWaypoints,
+                            modifier = Modifier.height(30.dp),
+                            colors = ButtonDefaults.buttonColors(backgroundColor = OrangeDim)
+                        ) {
+                            Text(
+                                text = "Waypoints",
+                                color = TextWhite,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 }
 
                 items(rides) { ride ->
@@ -170,21 +189,6 @@ fun SavedRidesScreen(
                                 color = TextGray,
                                 fontSize = 9.sp
                             )
-
-                            Button(
-                                onClick = { onOpenMap(ride) },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(28.dp),
-                                colors = ButtonDefaults.buttonColors(backgroundColor = OrangeDim)
-                            ) {
-                                Text(
-                                    text = "Map + Waypoints",
-                                    color = TextWhite,
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
                         }
 
                         Row(

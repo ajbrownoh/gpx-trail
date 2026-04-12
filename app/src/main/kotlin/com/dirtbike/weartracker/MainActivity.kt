@@ -32,6 +32,7 @@ import com.dirtbike.weartracker.ui.SaveConfirmScreen
 import com.dirtbike.weartracker.ui.SavedRideMapScreen
 import com.dirtbike.weartracker.ui.SavedRidesScreen
 import com.dirtbike.weartracker.ui.TrackingScreen
+import com.dirtbike.weartracker.ui.WaypointManagerScreen
 import com.dirtbike.weartracker.ui.theme.WearTrackerTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -168,6 +169,7 @@ class MainActivity : ComponentActivity() {
                 BackHandler(enabled = visibleScreen != Screen.HOME) {
                     when (visibleScreen) {
                         Screen.SAVED_RIDE_MAP -> viewModel.closeSavedRideMap()
+                        Screen.WAYPOINTS -> viewModel.closeWaypointManager()
                         Screen.SAVED_RIDES -> viewModel.navigateHome()
                         Screen.MARK_SPOT -> viewModel.cancelMarkSpot()
                         Screen.NAME_RIDE -> viewModel.cancelRideNaming()
@@ -270,6 +272,7 @@ class MainActivity : ComponentActivity() {
                         onOpenMap = { ride -> viewModel.openSavedRideMap(ride) },
                         onRename = { ride -> viewModel.promptToRenameRide(ride) },
                         onDelete = { ride -> viewModel.deleteRide(ride) },
+                        onWaypoints = { viewModel.navigateToWaypoints() },
                         onBack = { viewModel.navigateHome() }
                     )
 
@@ -283,6 +286,15 @@ class MainActivity : ComponentActivity() {
                             onBack = { viewModel.closeSavedRideMap() }
                         )
                     }
+
+                    Screen.WAYPOINTS -> WaypointManagerScreen(
+                        waypoints = importedWaypoints,
+                        hiddenWaypointKeys = hiddenWaypointKeys,
+                        onHideWaypoint = { waypoint -> viewModel.hideWaypoint(waypoint) },
+                        onShowWaypoint = { waypoint -> viewModel.showWaypoint(waypoint) },
+                        onShowAllWaypoints = { viewModel.showAllWaypoints(importedWaypoints) },
+                        onBack = { viewModel.closeWaypointManager() }
+                    )
                 }
             }
         }
