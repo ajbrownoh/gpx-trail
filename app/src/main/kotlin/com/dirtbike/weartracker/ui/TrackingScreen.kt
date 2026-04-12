@@ -781,7 +781,7 @@ private fun DrawScope.drawWaypointArrow(color: Color) {
     val cy = size.height / 2f
     val len = size.minDimension * 0.42f
     val halfW = len * 0.34f
-    val arrowCenterY = cy + len * 0.19f
+    val arrowCenterY = cy + len * 0.14f
 
     val arrowPath = Path().apply {
         moveTo(cx, arrowCenterY - len)
