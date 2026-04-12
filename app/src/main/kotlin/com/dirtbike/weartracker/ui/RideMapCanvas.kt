@@ -27,6 +27,7 @@ import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sin
+import kotlin.math.sqrt
 
 private val RouteStartColor = Color(0xFF4B525C)
 private val WaypointGuideDash = PathEffect.dashPathEffect(floatArrayOf(9f, 8f), 0f)
@@ -185,9 +186,11 @@ fun RideMapCanvas(
             val rotatedEnd = rotateAround(guide.second, center, -heading)
             drawWaypointGuideDistanceLabel(
                 text = guide.third,
-                center = Offset(
-                    x = (rotatedStart.x + rotatedEnd.x) / 2f,
-                    y = (rotatedStart.y + rotatedEnd.y) / 2f
+                center = visibleGuideLabelPoint(
+                    start = rotatedStart,
+                    end = rotatedEnd,
+                    canvasWidth = size.width,
+                    canvasHeight = size.height
                 )
             )
         }
@@ -255,6 +258,42 @@ private fun distanceSquared(first: Offset, second: Offset): Float {
     val dx = first.x - second.x
     val dy = first.y - second.y
     return dx * dx + dy * dy
+}
+
+private fun visibleGuideLabelPoint(
+    start: Offset,
+    end: Offset,
+    canvasWidth: Float,
+    canvasHeight: Float
+): Offset {
+    val dx = end.x - start.x
+    val dy = end.y - start.y
+    val length = sqrt(dx * dx + dy * dy)
+    if (length < 1f) return start
+
+    val unitX = dx / length
+    val unitY = dy / length
+    val margin = min(canvasWidth, canvasHeight) * 0.12f
+    val distanceToVerticalEdge = when {
+        unitX > 0f -> (canvasWidth - margin - start.x) / unitX
+        unitX < 0f -> (margin - start.x) / unitX
+        else -> Float.POSITIVE_INFINITY
+    }
+    val distanceToHorizontalEdge = when {
+        unitY > 0f -> (canvasHeight - margin - start.y) / unitY
+        unitY < 0f -> (margin - start.y) / unitY
+        else -> Float.POSITIVE_INFINITY
+    }
+    val visibleDistance = listOf(length, distanceToVerticalEdge, distanceToHorizontalEdge)
+        .filter { it.isFinite() && it > 0f }
+        .minOrNull() ?: length
+    val preferredDistance = min(min(canvasWidth, canvasHeight) * 0.2f, visibleDistance * 0.58f)
+    val labelDistance = preferredDistance.coerceAtLeast(min(visibleDistance * 0.5f, 42f))
+
+    return Offset(
+        x = start.x + unitX * labelDistance,
+        y = start.y + unitY * labelDistance
+    )
 }
 
 private fun DrawScope.drawWaypointGuideDistanceLabel(text: String, center: Offset) {
