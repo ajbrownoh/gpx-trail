@@ -170,6 +170,21 @@ fun SavedRidesScreen(
                                 color = TextGray,
                                 fontSize = 9.sp
                             )
+
+                            Button(
+                                onClick = { onOpenMap(ride) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(28.dp),
+                                colors = ButtonDefaults.buttonColors(backgroundColor = OrangeDim)
+                            ) {
+                                Text(
+                                    text = "Map + Waypoints",
+                                    color = TextWhite,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
 
                         Row(
