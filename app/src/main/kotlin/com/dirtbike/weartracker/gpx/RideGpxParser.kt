@@ -5,10 +5,10 @@ import com.dirtbike.weartracker.data.RideSummary
 import com.dirtbike.weartracker.data.TrackPoint
 import com.dirtbike.weartracker.data.Waypoint
 import java.io.File
+import java.time.Instant
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import java.util.TimeZone
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.pow
@@ -24,10 +24,6 @@ object RideGpxParser {
         val trackPoints: List<TrackPoint>,
         val waypoints: List<Waypoint>
     )
-
-    private val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
-        timeZone = TimeZone.getTimeZone("UTC")
-    }
 
     fun readSummary(file: File): RideSummary {
         val parsed = runCatching { readRide(file) }.getOrNull()
@@ -223,7 +219,7 @@ object RideGpxParser {
 
     private fun parseIsoTime(value: String): Long? {
         if (value.isBlank()) return null
-        return runCatching { isoFormat.parse(value)?.time }.getOrNull()
+        return runCatching { Instant.parse(value).toEpochMilli() }.getOrNull()
     }
 
     private fun calculateDistanceMeters(trackPoints: List<TrackPoint>): Double {
