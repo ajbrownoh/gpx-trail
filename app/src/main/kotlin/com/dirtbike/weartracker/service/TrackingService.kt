@@ -84,6 +84,9 @@ class TrackingService : Service() {
         private val _trackPoints = MutableStateFlow<List<TrackPoint>>(emptyList())
         val trackPoints: StateFlow<List<TrackPoint>> = _trackPoints.asStateFlow()
 
+        private val _latestGpsPoint = MutableStateFlow<TrackPoint?>(null)
+        val latestGpsPoint: StateFlow<TrackPoint?> = _latestGpsPoint.asStateFlow()
+
         private val _waypoints = MutableStateFlow<List<Waypoint>>(emptyList())
         val waypoints: StateFlow<List<Waypoint>> = _waypoints.asStateFlow()
 
@@ -127,6 +130,7 @@ class TrackingService : Service() {
 
         fun reset() {
             _trackPoints.value = emptyList()
+            _latestGpsPoint.value = null
             _waypoints.value = emptyList()
             _elapsedSeconds.value = 0L
             _totalDistanceMeters.value = 0.0
@@ -414,6 +418,7 @@ class TrackingService : Service() {
             else -> currentPoints.last().segmentId
         }
         val newPoint = smoothTrackPoint(TrackPoint(lat, lon, alt, now, segmentId))
+        _latestGpsPoint.value = newPoint
 
         if (currentPoints.isEmpty()) {
             beginTrackingFromFirstFix(newPoint.timestampMs)
@@ -624,6 +629,7 @@ class TrackingService : Service() {
         }
 
         _trackPoints.value = parsed.trackPoints
+        _latestGpsPoint.value = parsed.trackPoints.lastOrNull()
         _waypoints.value = parsed.waypoints
         _totalDistanceMeters.value = calculateDistanceMeters(parsed.trackPoints)
         updateBearingsAfterRestore(parsed.trackPoints)

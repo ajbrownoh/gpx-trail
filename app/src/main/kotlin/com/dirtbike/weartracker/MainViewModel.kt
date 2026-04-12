@@ -66,6 +66,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val isPaused = TrackingService.isPaused
     val hasGpsFix = TrackingService.hasGpsFix
     val gpsStatus = TrackingService.gpsStatus
+    val latestGpsPoint = TrackingService.latestGpsPoint
 
     private val _screen = MutableStateFlow(Screen.HOME)
     val screen: StateFlow<Screen> = _screen.asStateFlow()

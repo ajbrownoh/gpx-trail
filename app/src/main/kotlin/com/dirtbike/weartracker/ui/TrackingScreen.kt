@@ -80,6 +80,7 @@ fun TrackingScreen(
     hasGpsFix: Boolean,
     gpsStatus: String,
     trackPoints: List<TrackPoint>,
+    latestGpsPoint: TrackPoint?,
     waypoints: List<Waypoint>,
     importedWaypoints: List<Waypoint>,
     activeWaypoint: Waypoint?,
@@ -98,7 +99,7 @@ fun TrackingScreen(
     val hasTrackHistory = trackPoints.isNotEmpty()
     val canMarkWaypoint = hasTrackHistory && !isPaused
     val zoomFactor = if (isMapZoomedIn) 2.35f else 1f
-    val currentPoint = trackPoints.lastOrNull()
+    val currentPoint = latestGpsPoint ?: trackPoints.lastOrNull()
     val bearingToActiveWaypoint = if (currentPoint != null && activeWaypoint != null) {
         bearingTo(
             currentPoint.latitude,

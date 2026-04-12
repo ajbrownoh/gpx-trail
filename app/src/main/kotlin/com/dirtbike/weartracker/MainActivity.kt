@@ -109,6 +109,7 @@ class MainActivity : ComponentActivity() {
                 val screen by viewModel.screen.collectAsState()
                 val isAmbient by viewModel.isAmbient.collectAsState()
                 val trackPoints by viewModel.trackPoints.collectAsState()
+                val latestGpsPoint by viewModel.latestGpsPoint.collectAsState()
                 val waypoints by viewModel.waypoints.collectAsState()
                 val elapsedSeconds by viewModel.elapsedSeconds.collectAsState()
                 val totalDistanceMeters by viewModel.totalDistanceMeters.collectAsState()
@@ -217,6 +218,7 @@ class MainActivity : ComponentActivity() {
                         hasGpsFix = hasGpsFix,
                         gpsStatus = gpsStatus,
                         trackPoints = trackPoints,
+                        latestGpsPoint = latestGpsPoint,
                         waypoints = waypoints,
                         importedWaypoints = importedWaypoints,
                         activeWaypoint = activeWaypoint,
