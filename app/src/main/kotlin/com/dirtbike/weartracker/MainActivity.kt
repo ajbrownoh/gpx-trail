@@ -128,6 +128,7 @@ class MainActivity : ComponentActivity() {
                 val trackingPage by viewModel.trackingPage.collectAsState()
                 val importedWaypoints by viewModel.importedWaypoints.collectAsState()
                 val allWaypoints by viewModel.allWaypoints.collectAsState()
+                val isWaypointsLoading by viewModel.isWaypointsLoading.collectAsState()
                 val hiddenWaypointKeys by viewModel.hiddenWaypointKeys.collectAsState()
                 val activeWaypoint by viewModel.activeWaypoint.collectAsState()
                 val activeWaypointIndex by viewModel.activeWaypointIndex.collectAsState()
@@ -227,6 +228,7 @@ class MainActivity : ComponentActivity() {
                         latestGpsPoint = latestGpsPoint,
                         waypoints = waypoints,
                         importedWaypoints = importedWaypoints,
+                        isWaypointsLoading = isWaypointsLoading,
                         activeWaypoint = activeWaypoint,
                         activeWaypointIndex = activeWaypointIndex,
                         trackingPage = trackingPage,
@@ -293,9 +295,10 @@ class MainActivity : ComponentActivity() {
 
                     Screen.WAYPOINTS -> WaypointManagerScreen(
                         waypoints = allWaypoints,
+                        isLoading = isWaypointsLoading,
                         hiddenWaypointKeys = hiddenWaypointKeys,
-                        onHideWaypoints = { waypoints -> viewModel.hideWaypoints(waypoints) },
-                        onShowWaypoints = { waypoints -> viewModel.showWaypoints(waypoints) },
+                        onHideWaypoints = { selectedWaypoints -> viewModel.hideWaypoints(selectedWaypoints) },
+                        onShowWaypoints = { selectedWaypoints -> viewModel.showWaypoints(selectedWaypoints) },
                         onStartTracking = { waypoint -> startRideOrRequestPermissions(waypoint) },
                         onBack = { viewModel.closeWaypointManager() }
                     )

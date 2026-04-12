@@ -96,6 +96,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _allWaypoints = MutableStateFlow<List<Waypoint>>(emptyList())
     val allWaypoints: StateFlow<List<Waypoint>> = _allWaypoints.asStateFlow()
 
+    private val _isWaypointsLoading = MutableStateFlow(false)
+    val isWaypointsLoading: StateFlow<Boolean> = _isWaypointsLoading.asStateFlow()
+
     private val _hiddenWaypointCount = MutableStateFlow(0)
     val hiddenWaypointCount: StateFlow<Int> = _hiddenWaypointCount.asStateFlow()
 
@@ -133,6 +136,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private var pendingWaypoint: PendingWaypoint? = null
     private var rideNamingMode = RideNamingMode.SAVE_NEW
     private var rideBeingRenamed: RideSummary? = null
+    private var waypointLoadToken = 0
 
     init {
         checkForDraft()
@@ -457,15 +461,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun refreshImportedWaypoints() {
         val ctx = getApplication<Application>()
-        viewModelScope.launch(Dispatchers.IO) {
-            val hiddenKeys = hiddenWaypointKeys()
-            val allWaypoints = ImportedGpxRepository.listImportedWaypoints(ctx)
+        val loadToken = ++waypointLoadToken
+        _isWaypointsLoading.value = true
+        viewModelScope.launch {
+            val (hiddenKeys, allWaypoints) = withContext(Dispatchers.IO) {
+                hiddenWaypointKeys() to ImportedGpxRepository.listImportedWaypoints(ctx)
+            }
             val visibleWaypoints = allWaypoints.filterNot { it.hideKey() in hiddenKeys }
             _allWaypoints.value = allWaypoints
             _hiddenWaypointKeys.value = hiddenKeys
             _hiddenWaypointCount.value = allWaypoints.size - visibleWaypoints.size
             _importedWaypoints.value = visibleWaypoints
             restoreActiveWaypoint(visibleWaypoints)
+            if (loadToken == waypointLoadToken) {
+                _isWaypointsLoading.value = false
+            }
         }
     }
 

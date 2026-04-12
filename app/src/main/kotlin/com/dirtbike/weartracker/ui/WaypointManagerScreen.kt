@@ -47,6 +47,7 @@ import java.util.Locale
 @Composable
 fun WaypointManagerScreen(
     waypoints: List<Waypoint>,
+    isLoading: Boolean,
     hiddenWaypointKeys: Set<String>,
     onHideWaypoints: (List<Waypoint>) -> Unit,
     onShowWaypoints: (List<Waypoint>) -> Unit,
@@ -93,7 +94,9 @@ fun WaypointManagerScreen(
                 )
 
                 Text(
-                    text = if (hiddenCount == 0) {
+                    text = if (isLoading && waypoints.isEmpty()) {
+                        "Loading..."
+                    } else if (hiddenCount == 0) {
                         "${waypoints.size} shown"
                     } else if (showHiddenWaypoints) {
                         "${waypoints.size - hiddenCount} shown | $hiddenCount hidden visible"
@@ -177,7 +180,7 @@ fun WaypointManagerScreen(
             item {
                 Text(
                     text = if (waypoints.isEmpty()) {
-                        "No waypoints found"
+                        if (isLoading) "Loading waypoints..." else "No waypoints found"
                     } else {
                         "Hidden waypoints are hidden"
                     },

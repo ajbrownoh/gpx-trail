@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -84,6 +83,7 @@ fun TrackingScreen(
     latestGpsPoint: TrackPoint?,
     waypoints: List<Waypoint>,
     importedWaypoints: List<Waypoint>,
+    isWaypointsLoading: Boolean,
     activeWaypoint: Waypoint?,
     activeWaypointIndex: Int,
     trackingPage: TrackingPage,
@@ -156,6 +156,7 @@ fun TrackingScreen(
         if (trackingPage == TrackingPage.WAYPOINT) {
             WaypointNavigationScreen(
                 importedWaypoints = importedWaypoints,
+                isWaypointsLoading = isWaypointsLoading,
                 activeWaypoint = activeWaypoint,
                 activeWaypointIndex = activeWaypointIndex,
                 currentPoint = currentPoint,
@@ -347,6 +348,7 @@ private fun StatusChip(
 @Composable
 private fun WaypointNavigationScreen(
     importedWaypoints: List<Waypoint>,
+    isWaypointsLoading: Boolean,
     activeWaypoint: Waypoint?,
     activeWaypointIndex: Int,
     currentPoint: TrackPoint?,
@@ -453,7 +455,7 @@ private fun WaypointNavigationScreen(
             if (importedWaypoints.isEmpty()) {
                 item {
                     Text(
-                        text = "No imported waypoints",
+                        text = if (isWaypointsLoading) "Loading waypoints..." else "No imported waypoints",
                         color = TextGray,
                         fontSize = 10.sp,
                         textAlign = TextAlign.Center
@@ -508,9 +510,7 @@ private fun WaypointArrowOnlyScreen(
         )
 
         Column(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .offset(y = 14.dp),
+            modifier = Modifier.align(Alignment.Center),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(7.dp)
         ) {
