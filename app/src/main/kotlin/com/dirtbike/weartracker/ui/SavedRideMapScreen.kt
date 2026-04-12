@@ -156,7 +156,7 @@ fun SavedRideMapScreen(
                     fontSize = 9.sp,
                     modifier = Modifier.weight(1f)
                 )
-                LegendDot(color = OrangeAccent)
+                LegendDot(color = OrangeAccent, hollow = true)
                 Text(
                     text = "End",
                     color = TextGray,
@@ -322,15 +322,23 @@ private fun WaypointLegendRow(
 
 @Composable
 private fun LegendDot(
-    color: androidx.compose.ui.graphics.Color
+    color: Color,
+    hollow: Boolean = false
 ) {
     Canvas(modifier = Modifier.size(10.dp)) {
         drawCircle(color = color)
-        drawCircle(
-            color = BackgroundBlack,
-            radius = size.minDimension * 0.42f,
-            style = Stroke(width = 1.2f)
-        )
+        if (hollow) {
+            drawCircle(
+                color = BackgroundBlack,
+                radius = size.minDimension * 0.28f
+            )
+        } else {
+            drawCircle(
+                color = BackgroundBlack,
+                radius = size.minDimension * 0.42f,
+                style = Stroke(width = 1.2f)
+            )
+        }
     }
 }
 

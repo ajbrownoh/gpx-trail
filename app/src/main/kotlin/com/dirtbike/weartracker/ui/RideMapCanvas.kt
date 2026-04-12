@@ -203,10 +203,14 @@ private fun spreadNearbyPoints(points: List<Offset>): List<Offset> {
 
         val centerX = cluster.sumOf { points[it].x.toDouble() }.toFloat() / cluster.size
         val centerY = cluster.sumOf { points[it].y.toDouble() }.toFloat() / cluster.size
-        val spreadRadius = 7f + (cluster.size - 1) * 2f
+        val spreadRadius = when (cluster.size) {
+            2 -> 4.5f
+            3 -> 6f
+            else -> 6f + (cluster.size - 3) * 1.5f
+        }
 
         cluster.forEachIndexed { clusterIndex, pointIndex ->
-            val angle = (-PI / 2.0) + (2.0 * PI * clusterIndex / cluster.size)
+            val angle = 2.0 * PI * clusterIndex / cluster.size
             arrangedPoints[pointIndex] = Offset(
                 x = centerX + (cos(angle) * spreadRadius).toFloat(),
                 y = centerY + (sin(angle) * spreadRadius).toFloat()
