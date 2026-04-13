@@ -38,6 +38,7 @@ import com.dirtbike.weartracker.ui.theme.OrangeDim
 import com.dirtbike.weartracker.ui.theme.RedStop
 import com.dirtbike.weartracker.ui.theme.TextGray
 import com.dirtbike.weartracker.ui.theme.TextWhite
+import com.dirtbike.weartracker.ui.theme.WaypointBlue
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -172,8 +173,12 @@ fun SavedRidesScreen(
                         )
 
                         Text(
-                            text = dateFmt.format(Date(ride.recordedAtMs)),
-                            color = TextGray,
+                            text = if (ride.isImported) {
+                                "Imported GPX | ${dateFmt.format(Date(ride.recordedAtMs))}"
+                            } else {
+                                dateFmt.format(Date(ride.recordedAtMs))
+                            },
+                            color = if (ride.isImported) WaypointBlue else TextGray,
                             fontSize = 9.sp,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis

@@ -23,11 +23,13 @@ object RideRepository {
     }
 
     fun listRides(context: Context): List<RideSummary> {
-        return getGpxDir(context)
-            .listFiles { file -> file.extension == "gpx" && file.name != "draft.gpx" }
-            ?.sortedByDescending { it.lastModified() }
-            ?.map { file -> RideGpxParser.readSummary(file) }
-            ?: emptyList()
+        val recordedFiles = listGpxFiles(getGpxDir(context)).map { file -> file to false }
+        val importedFiles = ImportedGpxRepository.listImportedGpxFiles(context).map { file -> file to true }
+
+        return (recordedFiles + importedFiles)
+            .distinctBy { (file, _) -> file.absolutePath }
+            .sortedByDescending { (file, _) -> file.lastModified() }
+            .map { (file, isImported) -> RideGpxParser.readSummary(file, isImported) }
     }
 
     fun buildShareIntent(context: Context, ride: RideSummary): Intent {
@@ -51,6 +53,15 @@ object RideRepository {
     }
 
     fun deleteRide(ride: RideSummary): Boolean = ride.file.delete()
+
+    private fun listGpxFiles(dir: File): List<File> {
+        if (!dir.exists()) return emptyList()
+        return dir.listFiles { file ->
+            file.isFile &&
+                file.extension.equals("gpx", ignoreCase = true) &&
+                file.name != "draft.gpx"
+        }.orEmpty().toList()
+    }
 
     private fun renameRideFile(file: File, rideName: String): Boolean {
         val parsed = runCatching { RideGpxParser.readRide(file) }.getOrNull()

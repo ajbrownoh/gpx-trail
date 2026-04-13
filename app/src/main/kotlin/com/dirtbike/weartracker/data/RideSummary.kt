@@ -8,5 +8,6 @@ data class RideSummary(
     val recordedAtMs: Long,
     val durationSeconds: Long,
     val distanceMeters: Double,
-    val waypointCount: Int
+    val waypointCount: Int,
+    val isImported: Boolean = false
 )

@@ -25,7 +25,7 @@ object RideGpxParser {
         val waypoints: List<Waypoint>
     )
 
-    fun readSummary(file: File): RideSummary {
+    fun readSummary(file: File, isImported: Boolean = false): RideSummary {
         val parsed = runCatching { readRide(file) }.getOrNull()
         if (parsed == null) {
             return RideSummary(
@@ -34,7 +34,8 @@ object RideGpxParser {
                 recordedAtMs = file.lastModified(),
                 durationSeconds = 0L,
                 distanceMeters = 0.0,
-                waypointCount = 0
+                waypointCount = 0,
+                isImported = isImported
             )
         }
 
@@ -50,7 +51,8 @@ object RideGpxParser {
             recordedAtMs = startTimeMs,
             durationSeconds = durationSeconds,
             distanceMeters = calculateDistanceMeters(trackPoints),
-            waypointCount = parsed.waypoints.size
+            waypointCount = parsed.waypoints.size,
+            isImported = isImported
         )
     }
 

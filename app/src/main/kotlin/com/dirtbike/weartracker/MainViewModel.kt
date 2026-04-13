@@ -409,6 +409,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         RideRepository.renameRide(ride, finalName)
                     }
                     refreshSavedRides()
+                    refreshImportedWaypoints()
                     clearRideNamingState()
                     _screen.value = Screen.SAVED_RIDES
                 }
@@ -533,6 +534,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _selectedRideMap.value = null
         }
         refreshSavedRides()
+        refreshImportedWaypoints()
     }
 
     fun formatElapsed(seconds: Long): String {

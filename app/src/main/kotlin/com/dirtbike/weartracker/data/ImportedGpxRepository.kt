@@ -21,7 +21,7 @@ object ImportedGpxRepository {
     }
 
     fun listImportedWaypoints(context: Context): List<Waypoint> {
-        val importFiles = listGpxFiles(importDir(context))
+        val importFiles = listImportedGpxFiles(context)
         val savedRideFiles = listGpxFiles(RideRepository.getGpxDir(context))
 
         return (importFiles + savedRideFiles)
@@ -32,6 +32,10 @@ object ImportedGpxRepository {
             }
             .distinctBy { it.dedupeKey() }
             .sortedBy { it.name.lowercase() }
+    }
+
+    fun listImportedGpxFiles(context: Context): List<File> {
+        return listGpxFiles(importDir(context))
     }
 
     private fun importDir(context: Context): File {
