@@ -12,6 +12,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -27,6 +32,7 @@ import com.dirtbike.weartracker.ui.theme.OrangeAccent
 import com.dirtbike.weartracker.ui.theme.OrangeDim
 import com.dirtbike.weartracker.ui.theme.TextWhite
 import com.dirtbike.weartracker.ui.theme.WaypointYellow
+import kotlinx.coroutines.delay
 
 @Composable
 fun SaveConfirmScreen(
@@ -36,6 +42,15 @@ fun SaveConfirmScreen(
     onSave: () -> Unit,
     onDiscard: () -> Unit
 ) {
+    var confirmingDiscard by remember { mutableStateOf(false) }
+
+    LaunchedEffect(confirmingDiscard) {
+        if (confirmingDiscard) {
+            delay(2_500L)
+            confirmingDiscard = false
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -73,16 +88,31 @@ fun SaveConfirmScreen(
 
             Spacer(modifier = Modifier.height(4.dp))
 
+            if (confirmingDiscard) {
+                Text(
+                    text = "Tap discard again",
+                    color = OrangeDim,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Button(
-                    onClick = onDiscard,
+                    onClick = {
+                        if (confirmingDiscard) {
+                            onDiscard()
+                        } else {
+                            confirmingDiscard = true
+                        }
+                    },
                     modifier = Modifier.size(52.dp),
                     colors = ButtonDefaults.buttonColors(backgroundColor = OrangeDim)
                 ) {
                     Text(
-                        text = "Discard",
+                        text = if (confirmingDiscard) "Discard?" else "Discard",
                         color = TextWhite,
                         fontSize = 10.sp,
                         textAlign = TextAlign.Center
